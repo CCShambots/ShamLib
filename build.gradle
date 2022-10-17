@@ -5,6 +5,7 @@ plugins {
     id "edu.wpi.first.GradleRIO" version "2022.4.1"
 }
 
+
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
 
@@ -17,8 +18,8 @@ repositories {
     }
 }
 
-group = 'com.github.FRC6854'
-version = '2.0.0'
+group = 'com.github.CCShambots'
+version = '0.0.1'
 
 // Set this to true to enable desktop support.
 def includeDesktopSupport = false
