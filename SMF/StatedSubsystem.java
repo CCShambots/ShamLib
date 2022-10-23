@@ -1,4 +1,4 @@
-package frc.robot.util.Shambots5907_SMF;
+package frc.robot.ShamLib.SMF;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;

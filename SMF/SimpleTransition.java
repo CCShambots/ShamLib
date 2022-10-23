@@ -1,4 +1,4 @@
-package frc.robot.util.Shambots5907_SMF;
+package frc.robot.ShamLib.SMF;
 
 
 public class SimpleTransition<E extends Enum<E>> {
