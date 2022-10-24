@@ -45,12 +45,12 @@ public class VelocityTalonFX extends EnhancedTalonFX {
 
     /**
      * Set the target of the motor position
-     * @param target target position (in output units)
+     * @param target target position (in output units/sec)
      */
     public void setTarget(double target) {
         this.target = target;
 
-        set(TalonFXControlMode.Velocity, outputToTicks(target));
+        set(TalonFXControlMode.Velocity, outputToTicks(target) * 10);
     }
 
     /**

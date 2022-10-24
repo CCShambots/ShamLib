@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.PIDGains;
+import frc.robot.ShamLib.motors.PIDFGains;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,14 +49,24 @@ public class SwerveDrivetrain extends SubsystemBase {
      * @param moduleStdDevs Kalman filter standard deviations for the swerve modules
      * @param gyroStdDevs Kalman filter standard deviations for the gyro
      * @param visionStdDevs Kalman filter standard deviations for vision measurements
+     * @param moduleVelocityGains PIDF gains for the velocity of the swerve modules
+     * @param modulePositionGains PIDF gains for the position of the swerve modules
      * @param teleThetaGains PID gains for the angle hold controller in teleop
      * @param autoThetaGains PID gains for the angle hold controller in autonomous
      * @param translationGains PID gains for the trans
      * @param extraTelemetry whether to send additional telemetry data, like vision pose measurements, trajectory data, and module poses
      * @param moduleInfos Array of module infos, one for each module
      */
-    public SwerveDrivetrain(int pigeon2ID, Matrix<N3, N1> moduleStdDevs, Matrix<N1, N1> gyroStdDevs, Matrix<N3, N1> visionStdDevs,
-                            PIDGains teleThetaGains, PIDGains autoThetaGains, PIDGains translationGains, boolean extraTelemetry,
+    public SwerveDrivetrain(int pigeon2ID,
+                            Matrix<N3, N1> moduleStdDevs,
+                            Matrix<N1, N1> gyroStdDevs,
+                            Matrix<N3, N1> visionStdDevs,
+                            PIDFGains moduleVelocityGains,
+                            PIDFGains modulePositionGains,
+                            PIDGains teleThetaGains,
+                            PIDGains autoThetaGains,
+                            PIDGains translationGains,
+                            boolean extraTelemetry,
                             ModuleInfo... moduleInfos) {
 
         //TODO: Construct kDriveKinematics in here
@@ -73,7 +84,7 @@ public class SwerveDrivetrain extends SubsystemBase {
         modules = new HashMap<>();
         for(ModuleInfo i : moduleInfos) {
             numModules++;
-            modules.put("Module " + numModules, new SwerveModule("Module-" + numModules, i.turnMotorID, i.driveMotorID, i.encoderMotorID, i.encoderOffset, i.offset));
+            modules.put("Module " + numModules, new SwerveModule("Module-" + numModules, i.turnMotorID, i.driveMotorID, i.encoderID, i.encoderOffset, i.offset));
         }
 
         gyro.configFactoryDefault();

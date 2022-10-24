@@ -83,6 +83,20 @@ public class EnhancedTalonFX extends WPI_TalonFX {
     }
 
     /**
+     * @param pos The position (in output units) to which the motor should be reset
+     */
+    public void resetPosition(double pos) {
+        setSelectedSensorPosition(outputToTicks(pos));
+    }
+
+    /**
+     * Resets the motor back to zero
+     */
+    public void resetPosition() {
+        setSelectedSensorPosition(0);
+    }
+
+    /**
      * Configure the motors PIDF loop for motion magic
      * @param idx id slot of the PID
      * @param gains PIDF gains
