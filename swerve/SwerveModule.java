@@ -4,6 +4,8 @@ import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import edu.wpi.first.math.MathUsageId;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -31,9 +33,9 @@ public class SwerveModule implements Sendable{
     private Translation2d moduleOffset;
 
     public SwerveModule(String name,
+                        String canbus,
                         int turnID,
                         int driveID,
-                        String canbus,
                         int encoderID,
                         double encoderOffset,
                         Translation2d moduleOffset,
@@ -74,15 +76,30 @@ public class SwerveModule implements Sendable{
         );
     }
 
+    public SwerveModule(String name,
+                        int turnID,
+                        int driveID,
+                        int encoderID,
+                        double encoderOffset,
+                        Translation2d moduleOffset,
+                        PIDFGains driveGains,
+                        PIDFGains turnGains,
+                        double maxTurnVelo,
+                        double maxTurnAccel,
+                        double turnRatio,
+                        double driveRatio
+    ) {
+        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio);
+    }
+
     private double normalizeDegrees(double degrees) {
-        double rads = Math.toRadians(degrees);
-        return Math.toDegrees(Math.atan2(Math.sin(rads), Math.cos(rads)));
+        return Math.IEEEremainder(degrees, 180);
     }
 
     public void setDesiredState(SwerveModuleState state) {
         SwerveModuleState optimizedState = SwerveModuleState.optimize(state, getTurnAngle());
         targetState = optimizedState;        
-        double turnPos = turnMotor.getSelectedSensorPosition();
+        double turnPos = turnMotor.getPosition();
         targetModuleAngle = turnPos + (normalizeDegrees(optimizedState.angle.getDegrees() - normalizeDegrees(turnPos)));
 
         turnMotor.setTarget(targetModuleAngle);
@@ -96,7 +113,7 @@ public class SwerveModule implements Sendable{
     }
 
     public double getDriveMotorRate(){
-        return driveTicksToMeters(driveMotor.getSelectedSensorVelocity()) * 10.0;
+        return driveMotor.getVelocity();
     } 
 
     public SwerveModuleState getCurrentState() {

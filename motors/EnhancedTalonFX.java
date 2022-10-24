@@ -2,6 +2,14 @@ package frc.robot.ShamLib.motors;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.BooleanSupplier;
 
 public class EnhancedTalonFX extends WPI_TalonFX {
     private int kTimeoutMs = 30;
@@ -108,6 +116,28 @@ public class EnhancedTalonFX extends WPI_TalonFX {
         config_kP(idx, gains.kP, kTimeoutMs);
         config_kI(idx, gains.kI, kTimeoutMs);
         config_kD(idx, gains.kD, kTimeoutMs);
+    }
+
+    public Command calculateKF(double power, BooleanSupplier interrupt) {
+        List<Double> rawVelos = new ArrayList<>();
+        List<Double> filteredVelos = new ArrayList<>();
+        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02); //TODO: These values might have to change if they're not useful
+
+        return new FunctionalCommand(
+                () -> setManualPower(power),
+                () -> {
+                    filteredVelos.add(filter.calculate(getSelectedSensorVelocity()));
+                    rawVelos.add(getSelectedSensorVelocity());
+                },
+                (interrupted) -> {
+                    setManualPower(0);
+                    double maxFiltered = filteredVelos.stream().max(Double::compare).get();
+                    double maxRaw = rawVelos.stream().max(Double::compare).get();
+                    System.out.println("filtered kF: " + (power * 1023.0) / maxFiltered);
+                    System.out.println("raw kF: " + (power * 1023.0) / maxRaw);
+                },
+                () -> interrupt.getAsBoolean()
+        );
     }
 }
 

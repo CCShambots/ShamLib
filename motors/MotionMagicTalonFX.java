@@ -3,6 +3,7 @@ package frc.robot.ShamLib.motors;
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
+import edu.wpi.first.wpilibj2.command.Command;
 
 public class MotionMagicTalonFX extends EnhancedTalonFX{
     private int kTimeoutMs = 30;

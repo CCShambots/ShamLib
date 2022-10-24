@@ -21,15 +21,15 @@ import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.PIDGains;
 import frc.robot.ShamLib.motors.PIDFGains;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map.Entry;
 
 import static frc.robot.Constants.SwerveDrivetrain.*;
 
 public class SwerveDrivetrain extends SubsystemBase {
 
-    private Map<String, SwerveModule> modules;
+    protected final List<SwerveModule> modules;
     private int numModules = 0;
     private WPI_Pigeon2 gyro;
     private double rotationOffset;
@@ -49,24 +49,32 @@ public class SwerveDrivetrain extends SubsystemBase {
      * @param moduleStdDevs Kalman filter standard deviations for the swerve modules
      * @param gyroStdDevs Kalman filter standard deviations for the gyro
      * @param visionStdDevs Kalman filter standard deviations for vision measurements
-     * @param moduleVelocityGains PIDF gains for the velocity of the swerve modules
-     * @param modulePositionGains PIDF gains for the position of the swerve modules
+     * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
+     * @param moduleTurnGains PIDF gains for the position of the swerve modules
+     * @param maxModuleTurnVelo maximum velocity the turn motors should go
+     * @param maxModuleTurnAccel maximum acceleration the turn motors should go
      * @param teleThetaGains PID gains for the angle hold controller in teleop
      * @param autoThetaGains PID gains for the angle hold controller in autonomous
      * @param translationGains PID gains for the trans
      * @param extraTelemetry whether to send additional telemetry data, like vision pose measurements, trajectory data, and module poses
+     * @param moduleCanbus The canbus the modules are on (pass "" for default)
+     * @param gyroCanbus The canbus the gyro is on (pass "" for default)
      * @param moduleInfos Array of module infos, one for each module
      */
     public SwerveDrivetrain(int pigeon2ID,
                             Matrix<N3, N1> moduleStdDevs,
                             Matrix<N1, N1> gyroStdDevs,
                             Matrix<N3, N1> visionStdDevs,
-                            PIDFGains moduleVelocityGains,
-                            PIDFGains modulePositionGains,
+                            PIDFGains moduleDriveGains,
+                            PIDFGains moduleTurnGains,
+                            double maxModuleTurnVelo,
+                            double maxModuleTurnAccel,
                             PIDGains teleThetaGains,
                             PIDGains autoThetaGains,
                             PIDGains translationGains,
                             boolean extraTelemetry,
+                            String moduleCanbus,
+                            String gyroCanbus,
                             ModuleInfo... moduleInfos) {
 
         //TODO: Construct kDriveKinematics in here
@@ -79,12 +87,17 @@ public class SwerveDrivetrain extends SubsystemBase {
         xHoldController = translationGains.applyToController();
         yHoldController = translationGains.applyToController();
 
-        gyro = new WPI_Pigeon2(pigeon2ID);
+        gyro = new WPI_Pigeon2(pigeon2ID, gyroCanbus);
 
-        modules = new HashMap<>();
-        for(ModuleInfo i : moduleInfos) {
+        modules = new ArrayList<>();
+        Translation2d[] offsets = new Translation2d[moduleInfos.length];
+        for(int i = 0; i<moduleInfos.length; i++) {
             numModules++;
-            modules.put("Module " + numModules, new SwerveModule("Module-" + numModules, i.turnMotorID, i.driveMotorID, i.encoderID, i.encoderOffset, i.offset));
+            ModuleInfo m = moduleInfos[i];
+            offsets[i] = m.offset;
+
+            modules.add(new SwerveModule("Module-" + numModules, moduleCanbus, m.turnMotorID, m.driveMotorID,
+                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio));
         }
 
         gyro.configFactoryDefault();
@@ -92,8 +105,8 @@ public class SwerveDrivetrain extends SubsystemBase {
         rotationOffset = getGyroHeading();
         holdAngle = new Rotation2d(rotationOffset);
         thetaHoldControllerTele.setTolerance(Math.toRadians(1.5));
-        
-        odometry = new SwerveDrivePoseEstimator(getCurrentAngle(), new Pose2d(), kDriveKinematics, moduleStdDevs, gyroStdDevs, visionStdDevs);
+
+        odometry = new SwerveDrivePoseEstimator(getCurrentAngle(), new Pose2d(), new SwerveDriveKinematics(offsets), moduleStdDevs, gyroStdDevs, visionStdDevs);
 
         thetaHoldControllerTele.enableContinuousInput(-Math.PI, Math.PI);
         thetaHoldControllerAuto.enableContinuousInput(-Math.PI, Math.PI);
@@ -139,8 +152,8 @@ public class SwerveDrivetrain extends SubsystemBase {
 
         if(extraTelemetry) {
             //Send each of the module poses to the dashboard as well
-            for(Entry<String, SwerveModule> e : modules.entrySet()) {
-                field.getObject(e.getKey()).setPose(calculateModulePose(e.getValue(), robotPose));
+            for(SwerveModule e : modules) {
+                field.getObject(e.getModuleName()).setPose(calculateModulePose(e, robotPose));
             }
         }
 
@@ -176,12 +189,12 @@ public class SwerveDrivetrain extends SubsystemBase {
      */
     public void setModuleStates(SwerveModuleState[] states) {
         for(int i = 0; i<states.length; i++) {
-            modules.get("Module " + (i + 1)).setDesiredState(states[i]);
+            modules.get(i).setDesiredState(states[i]);
         }
     }
 
     public void setAllModules(SwerveModuleState state) {
-        for(SwerveModule module : modules.values()) {
+        for(SwerveModule module : modules) {
             module.setDesiredState(state);
         }
     }
@@ -198,7 +211,7 @@ public class SwerveDrivetrain extends SubsystemBase {
     }
 
     public void stopModules() {
-        modules.forEach((name, module) -> module.stop());
+        modules.forEach((module) -> module.stop());
     }
 
     public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, boolean resetPose) {
