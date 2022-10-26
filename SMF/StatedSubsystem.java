@@ -7,6 +7,13 @@ import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.ShamLib.SMF.exceptions.DuplicateTransitionException;
+import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException;
+import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException;
+import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException;
+import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
+import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
+import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
 
 import java.util.*;
 import java.util.function.BooleanSupplier;
@@ -201,43 +208,49 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * Only the first command registered for a certain state will be
      * @param state the state that should have a continuous command
      * @param command the command that should run once the subsystem reaches that state
+     * @return whether the command was successfully added
      */
-    protected void setContinuousCommand(E state, Command command) {
-        if(!isValidCommand(command)) {
-            outputErrorMessage("YOU TRIED TO DEFINE AN INVALID CONTINUOUS COMMAND",
-                    "Commands may have no requirements or must require only this subsystem",
-                    "SUBSYSTEM NAME: " + getName(),
-                    "STATE: " + state.name());
-            return;
-        }
+    protected boolean setContinuousCommand(E state, Command command) {
+        try {
+            if(!isValidCommand(command)) {
+                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.InvalidCommand);
+            }
+    
+            //The continuous command is invalid if the indicated state is a flag state
+            if(isFlagState(state))
+                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.AlreadyFlagState);
+            if(continuousCommands.containsKey(state)){
+                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.CommandAlreadyDefined);
+            } else if(perInstanceStates.contains(state)) {
+                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.InstanceBasedState);
+            }
+            else continuousCommands.put(state, command);
 
-        //The continuous command is invalid if the indicated state is a flag state
-        if(isFlagState(state))
-            outputErrorMessage("CONTINUOUS COMMANDS CANNOT RUN FOR STATES MARKED AS TRANSITION STATES",
-            "COMMAND TRYING TO BE ADDED: " + state.name());
-
-        if(continuousCommands.containsKey(state)){
-            outputErrorMessage("YOU CANNOT DEFINE MULTIPLE CONTINUOUS COMMANDS FOR THE SAME STATE", "State: " + state.name(), "Command: " + command);
-            return;
-        } else if(perInstanceStates.contains(state)) {
-            outputErrorMessage("YOU CANNOT DEIFNE A CONTINUOUS COMMAND FOR AN INSTANCE-BASED STATE", "State: " + state.name());
-            return;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        else continuousCommands.put(state, command);
     }
 
     /**
      * Define a state that will start a different continuous command each time it is reached
      * This state cannot be a flag state, or a state with a continuous command
      * @param state the state that should become instance-based
+     * @return whether the state was successfully marked as instance-based
      */
-    protected void addInstanceBasedState(E state) {
-        if(isFlagState(state))
-        outputErrorMessage("INSTANCE-BASED STATES CANNOT ALREADY BE TRANSITION STATES",
-        "STATE TRYING TO BE ADDED: " + state.name());
+    protected boolean addInstanceBasedState(E state) {
+        try {
+            if(isFlagState(state)) throw new InstanceBasedStateException(getName(), state.name(), InstanceBasedReason.AlreadyFlagState);
+    
+            if(!continuousCommands.containsKey(state)) perInstanceStates.add(state);
+            else throw new InstanceBasedStateException(getName(), state.name(), InstanceBasedReason.AlreadyContinuous);
 
-        if(!continuousCommands.containsKey(state)) perInstanceStates.add(state);
-        else outputErrorMessage("YOU CANNOT DEFINE AN INSTANCE BASED STATE THAT ALREADY HAS A CONTINUOUS COMMAND", "State: " + state.name()); 
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     private boolean isFlagState(E state) {
@@ -266,42 +279,39 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * @return whether the proposed transition is valid or not
      */
     private boolean checkIfValidTransition(Transition<E> proposedTransition) {
-        //The transition is invalid if it leads from or to the undetermined state
-        if(this.undeterminedState == proposedTransition.getStartState() || this.undeterminedState == proposedTransition.getEndState()) {
-            outputErrorMessage("TRANSITIONS CANNOT GO TO OR FROM THE UNDETERMINED STATE", "Transition information: " + proposedTransition);
+        try {
+            //The transition is invalid if it leads from or to the undetermined state
+            if(this.undeterminedState == proposedTransition.getStartState() || this.undeterminedState == proposedTransition.getEndState()) {
+                outputErrorMessage("TRANSITIONS CANNOT GO TO OR FROM THE UNDETERMINED STATE", "Transition information: " + proposedTransition);
 
-            return false;
-        }
-
-        //The transition is invalid if the command itself is invalid (has incorrect subsystem requirements)
-        if(!isValidCommand(proposedTransition.getCommand())) {
-            outputErrorMessage("COMMANDS CANNOT REQUIRE INVALID SUBSYSTEMS", "Commands must have no requirements or only require this subsystem", 
-                "transition information: " + proposedTransition);
-
-            return false;
-        }
-
-        //The transition is invalid if either one of its states have been marked as flag states
-        Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
-        if(statesMarkedAsFlag.contains(proposedTransition.getStartState()) || statesMarkedAsFlag.contains(proposedTransition.getEndState()) || statesMarkedAsFlag.contains(proposedTransition.getInterruptionState())) {
-            outputErrorMessage("TRANSITIONS CANNOT INCLUDE STATES MARKED AS TRANSITION STATES",
-                    "TRANSITION TRYING TO BE ADDED: " + proposedTransition);
-            return false;
-        }
-
-        //Check the other defined transitions to see if there are any conflicts (if they represent the same states, or if they
-        for(Transition<E> t : transitions) {
-            if(!proposedTransition.isValidTransition(t)) {
-                outputErrorMessage("YOU TRIED TO DEFINE AN INVALID TRANSITION",
-                        "SUBSYSTEM NAME: " + getName(),
-                        "EXISTING TRANSITION CONFLICT: " + t,
-                        "TRANSITION TRYING TO BE ADDED: " + proposedTransition,
-                        "NOTE: THIS TRANSITION WILL NOT WORK UNTIL THE ERROR IS CORRECTED");
                 return false;
             }
-        }
 
-        return true;
+            //The transition is invalid if the command itself is invalid (has incorrect subsystem requirements)
+            if(!isValidCommand(proposedTransition.getCommand())) {
+                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.CommandRequirements);
+            }
+
+            //The transition is invalid if either one of its states have been marked as flag states
+            Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
+            if(statesMarkedAsFlag.contains(proposedTransition.getStartState()) || statesMarkedAsFlag.contains(proposedTransition.getEndState()) || statesMarkedAsFlag.contains(proposedTransition.getInterruptionState())) {
+                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.StateAlreadyFlag);
+            }
+
+            //Check the other defined transitions to see if there are any conflicts (if they represent the same states, or if they
+            for(Transition<E> t : transitions) {
+                if(!proposedTransition.isValidTransition(t)) {
+                    throw new DuplicateTransitionException(getName(), proposedTransition, t);
+                }
+            }
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return false;
+        }
+        
     }
 
     /**
