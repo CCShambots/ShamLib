@@ -10,7 +10,8 @@ public class InvalidTransitionException extends Exception{
 
     public enum TransitionReason {
         CommandRequirements("Commands must have no requirements or only require this subsystem!"),
-        StateAlreadyFlag("Transitions cannot include states marked as flag states")
+        StateAlreadyFlag("Transitions cannot include states marked as flag states"),
+        UndeterminedState("Transitions cannot go to or from the undetermined state")
         ;
 
         private final String label;

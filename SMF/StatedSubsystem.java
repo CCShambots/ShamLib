@@ -7,13 +7,19 @@ import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import frc.robot.ShamLib.SMF.exceptions.DeterminationException;
 import frc.robot.ShamLib.SMF.exceptions.DuplicateTransitionException;
+import frc.robot.ShamLib.SMF.exceptions.FlagStateException;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException;
+import frc.robot.ShamLib.SMF.exceptions.TransitionException;
+import frc.robot.ShamLib.SMF.exceptions.DeterminationException.DeterminationReason;
+import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
+import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
 
 import java.util.*;
 import java.util.function.BooleanSupplier;
@@ -134,24 +140,32 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * @param undeterminedState The state in which the subsystem is initialized
      * @param entryState The state the subsystem can go to from the undetermined state
      * @param command The command that runs in the transition
+     * @return whether the determination was successfully added
      */
-    protected void addDetermination(E undeterminedState, E entryState, Command command) {
-        if(this.undeterminedState != null) {
-            outputErrorMessage("You've already defined an undetermined state for this subsystem",
-                    "(Subsystem name: " + getName() + ")");
-            return;
+    protected boolean addDetermination(E undeterminedState, E entryState, Command command) {
+        try {
+            if(this.undeterminedState != null) {
+                throw new DeterminationException(getName(), undeterminedState.name(), entryState.name(), DeterminationReason.AlreadyExisting);
+            }
+    
+            Transition<E> determinationTransition = new Transition<>(undeterminedState, entryState, command);
+    
+            if(!checkIfValidTransition(determinationTransition)) return false;
+    
+            this.undeterminedState = undeterminedState;
+            this.entryState = entryState;
+            this.currentState = undeterminedState;
+            this.desiredState = undeterminedState;
+    
+            transitions.add(determinationTransition);
+    
+            return true;
+            
+        }catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
 
-        Transition<E> determinationTransition = new Transition<>(undeterminedState, entryState, command);
-
-        if(!checkIfValidTransition(determinationTransition)) return;
-
-        this.undeterminedState = undeterminedState;
-        this.entryState = entryState;
-        this.currentState = undeterminedState;
-        this.desiredState = undeterminedState;
-
-        transitions.add(determinationTransition);
     }
 
     /**
@@ -161,44 +175,35 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * @param parentState the parent state in which the flag state should trigger
      * @param flagState the flag state which can potentially be active
      * @param condition under what conditions the flag state should be active
+     * @return whether the flag state was added successfully
      */
-    protected void addFlagState(E parentState, E flagState, BooleanSupplier condition) {
+    protected boolean addFlagState(E parentState, E flagState, BooleanSupplier condition) {
+        try {
+            //If the flag state is already registered as part of transitions, it is invalid
+            if(getStartStates().contains(flagState) || getEndStates().contains(flagState) || getInterruptionStates().contains(flagState)) {
+                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.PartOfTransition);
+            }
+    
+            //Any state marked as a flag state cannot be a parent state
+            if(getStatesMarkedAsFlag().contains(parentState)) {
+                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.FlagAlreadyParent);
+            }
+    
+            //Any state already marked as a parent state cannot become a flag state
+            if(getStatesMarkedAsParent().contains(flagState)) {
+                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.ParentAlreadyFlag);
+            }
+    
+            //Register the parent state as a new parent state if it does not yet have flag states
+            if(!flagStates.containsKey(parentState)) flagStates.put(parentState, new ArrayList<>());
+    
+            flagStates.get(parentState).add(new FlagState<>(flagState, condition));
+            return true;
 
-        //If the flag state is already registered as part of transitions, it is invalid
-        if(getStartStates().contains(flagState) || getEndStates().contains(flagState) || getInterruptionStates().contains(flagState)) {
-            outputErrorMessage("FLAG STATES CANNOT BE PARTS OF TRANSITIONS",
-                    "You tried to register a flag state that is already the start, end, or interruption state or an existing transition",
-                    "Parent state: " + parentState.name(),
-                    "Flag state: " + flagState.name()
-                    );
-            return;
-
+        }catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-
-        //Any state marked as a flag state cannot be a parent state
-        if(getStatesMarkedAsFlag().contains(parentState)) {
-            outputErrorMessage("FLAG STATES CANNOT BE USED AS PARENT STATES",
-                    "You attempted to register the following:",
-                    "Parent state: " + parentState.name() + " (this is already a flag state)",
-                    "Flag state: " + flagState.name());
-            return;
-        }
-
-        //Any state already marked as a parent state cannot become a flag state
-        if(getStatesMarkedAsParent().contains(flagState)) {
-
-            outputErrorMessage("PARENTS STATES CANNOT BE MADE FLAG STATES",
-                    "You attempted to register a flag state that has already been marked a parent state",
-                    "Parent state: " + parentState.name(),
-                    "Flag state: " + flagState.name() + " (already a parent state)");
-
-            return;
-        }
-
-        //Register the parent state as a new parent state if it does not yet have flag states
-        if(!flagStates.containsKey(parentState)) flagStates.put(parentState, new ArrayList<>());
-
-        flagStates.get(parentState).add(new FlagState<>(flagState, condition));
     }
 
     /**
@@ -282,9 +287,7 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
         try {
             //The transition is invalid if it leads from or to the undetermined state
             if(this.undeterminedState == proposedTransition.getStartState() || this.undeterminedState == proposedTransition.getEndState()) {
-                outputErrorMessage("TRANSITIONS CANNOT GO TO OR FROM THE UNDETERMINED STATE", "Transition information: " + proposedTransition);
-
-                return false;
+                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.UndeterminedState);
             }
 
             //The transition is invalid if the command itself is invalid (has incorrect subsystem requirements)
@@ -373,50 +376,51 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      */
     public abstract void update();
 
-
-    //TODO: Actual error handling instead of just prints
     /**
      * Ask for the subsystem to move to a different state
-     * If a flag state is provided, the robot will start transitioning to its parent state
+     * If a flag state is provided, the subsystem will start transitioning to its parent state
      * @param state The state to which the subsystem should go
      * @return whether a transition was successfully found
      */
     public boolean requestTransition(E state) {
 
-        //Since this sate has been marked as a flag state, we find its parent state and request to transition to that
-        if(getStatesMarkedAsFlag().contains(state)) {
-            state = findParentState(state);
-        }
+        try {
 
-        if(!getEndStates().contains(state)) {
-            outputErrorMessage("YOU TRIED TO REQUEST A STATE THAT DOESN'T EXIST",
-                    "SUBSYSTEM NAME: " + getName(),
-                    "TRANSITION CONFLICT: " + state.name());
+            //Since this sate has been marked as a flag state, we find its parent state and request to transition to that
+            if(getStatesMarkedAsFlag().contains(state)) {
+                state = findParentState(state);
+            }
+    
+            if(!getEndStates().contains(state)) {
+                throw new TransitionException(getName(), state.name(), TransitionExceptionReason.MissingEndState);
+            }
+    
+            Transition<E> t = findTransition(currentState, state, transitions);
+    
+            //If a valid transition was found, then start performing it
+            if(t != null) {
+    
+                //If a transition is already occurring, cancel it
+                if(transitioning) {
+                    cancelTransition();
+                }
+    
+                //If a continuous command is running, cancel it
+                if(!transitioning && currentCommand != null) {
+                    currentCommand.cancel();
+                }
+    
+                desiredState = state;
+                currentTransition = t;
+                needToScheduleTransitionCommand = true;
+                transitioning = true;
+            } else return false;
+    
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
-
-        Transition<E> t = findTransition(currentState, state, transitions);
-
-        //If a valid transition was found, then start performing it
-        if(t != null) {
-
-            //If a transition is already occurring, cancel it
-            if(transitioning) {
-                cancelTransition();
-            }
-
-            //If a continuous command is running, cancel it
-            if(!transitioning && currentCommand != null) {
-                currentCommand.cancel();
-            }
-
-            desiredState = state;
-            currentTransition = t;
-            needToScheduleTransitionCommand = true;
-            transitioning = true;
-        } else return false;
-
-        return true;
     }
 
     /**
@@ -467,14 +471,7 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
         return false;
     }
 
-    private void outputErrorMessage(String message, String... args) {
-        System.out.println("-----" + message + "!!!!-----");
-        for(String a : args) {
-            System.out.println(a);
-        }
-        System.out.println("-------------------------------------------------------");
-    }
-
+    //TODO: Make these faster (generate them once and call from them (i.e. when a transition is added perhaps?)) 
     private List<E> getStartStates() {
         return transitions.stream().map(Transition::getStartState).collect(Collectors.toList());
     }
