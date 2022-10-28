@@ -20,37 +20,39 @@ import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBase
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
+import frc.robot.ShamLib.SMF.transitions.CommandTransition;
+import frc.robot.ShamLib.SMF.transitions.InstantTransition;
+import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
+public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
-    private final List<Transition<E>> transitions = new ArrayList<>();
+    private final List<TransitionBase<E>> transitions = new ArrayList<>();
     private final Map<E, List<FlagState<E>>> flagStates;
     private final List<E> perInstanceStates = new ArrayList<>();
     private final Map<E, Command> continuousCommands;
-    private E undeterminedState;
+    
     private E entryState;
-
     private E currentState;
     private E flagState;
     private E desiredState;
 
-    private Transition<E> currentTransition;
+    private TransitionBase<E> currentTransition;
     private boolean transitioning = false;
     private Command currentCommand = null;
     private boolean needToScheduleTransitionCommand = false;
     private boolean enabled = false;
     
-    public StatedSubsystem(Class<E> enumType) {
+    public StateMachine(Class<E> enumType) {
         flagStates = new EnumMap<>(enumType);
         continuousCommands = new EnumMap<>(enumType);
     }
 
     /**
-     * Alternative version to define states that can transition between each other
+     * Creates a CommandTransition back and forth between two states
      * @param state1 One state
      * @param state2 The other state
      * @param command1 The command that will run from state1 to state2
@@ -60,30 +62,15 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
         addTransition(state1, state2, command1);
         addTransition(state2, state1, command2);
     }
-
-    /**
-     * Creates a new transition with a duplicate command as another one. This is useful for running the same transition command between / among many states
-     * @param startState the start state of the transition you want to create
-     * @param endState the ending state of the transition you want to create
-     * @param copyFromStart the starting state of the transition you want to copy
-     * @param copyFromEnd the ending state of the transition you want to copy
-     * @return whether a transition was successfully found
-     */
-    protected boolean duplicateTransition(E startState, E endState, E copyFromStart, E copyFromEnd) {
-
-        for(Transition<E> t : transitions) {
-            if(t.getStartState() == copyFromStart && t.getEndState() == copyFromEnd) {
-                addTransition(startState, endState, t.getCommand());
-                return true;
-            }
-        }
-
-        return false;
+    
+    protected void addCommutativeTransition(E state1, E state2, Runnable toRun1, Runnable toRun2) {
+        addTransition(state1, state2, toRun1);
+        addTransition(state2, state1, toRun2);
     }
 
     /**
      * Create a transition between / among many states easily. A transition with the same command will be created going from every provided start state
-     * to any provided end state
+     * to every provided end state
      * @param startingStates all starting states to apply the transitions to
      * @param endingStates all ending states to apply the transitions to
      * @param command the command to run
@@ -110,14 +97,25 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
-     * Default version of this method reverts to the start state in case of an interruption
-     * @param startState where the subsystem is when beginning the transition
+     * Creates a CommandTransition between two states
+     * @param startState where the machine begins the transition transition
      * @param endState where the subsystem ends the transition
      * @param command the command that runs
      */
     protected void addTransition(E  startState, E endState, Command command) {
-        addTransition(startState, endState, startState, command);
+        addTransition(new CommandTransition<E>(startState, endState, command));
     }
+
+    /**
+     * Creates an InstantTransition between two states
+     * @param startState where the machine begins the transition
+     * @param endState where the machine ends the transition
+     * @param toRun the runnable to run
+     */
+    protected void addTransition(E startState, E endState, Runnable toRun) {
+        addTransition(new InstantTransition<E>(startState, endState, toRun));
+    }
+
 
     /**
      * Alternate version of the method where an interruption state can be stated
@@ -125,47 +123,25 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * @param endState where the subsystem ends the transition
      * @param interruptionState the state that should be switched to if the transition is interrupted
      * @param command the command that runs through the transition
+     * @return whether adding the transition was successful
      */
-    protected void addTransition(E startState, E endState, E interruptionState, Command command) {
-        Transition<E> suggestedTransition = new Transition<>(startState, endState, interruptionState, command);
+    protected boolean addTransition(TransitionBase<E> suggestedTransition) {
 
         //End the function if the transition conflicts
-        if(!checkIfValidTransition(suggestedTransition)) return;
+        if(!checkIfValidTransition(suggestedTransition)) return false;
 
         transitions.add(suggestedTransition);
+        
+        return true;
     }
 
     /**
-     * Give the command that allows the
-     * @param undeterminedState The state in which the subsystem is initialized
-     * @param entryState The state the subsystem can go to from the undetermined state
-     * @param command The command that runs in the transition
-     * @return whether the determination was successfully added
+     * Set the state that the state machine will default to when it starts
+     * @param entryState
      */
-    protected boolean addDetermination(E undeterminedState, E entryState, Command command) {
-        try {
-            if(this.undeterminedState != null) {
-                throw new DeterminationException(getName(), undeterminedState.name(), entryState.name(), DeterminationReason.AlreadyExisting);
-            }
-    
-            Transition<E> determinationTransition = new Transition<>(undeterminedState, entryState, command);
-    
-            if(!checkIfValidTransition(determinationTransition)) return false;
-    
-            this.undeterminedState = undeterminedState;
-            this.entryState = entryState;
-            this.currentState = undeterminedState;
-            this.desiredState = undeterminedState;
-    
-            transitions.add(determinationTransition);
-    
-            return true;
-            
-        }catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-
+    protected void setEntryState(E entryState) {
+        this.entryState = entryState;
+        this.currentState = entryState;
     }
 
     /**
@@ -217,9 +193,6 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      */
     protected boolean setContinuousCommand(E state, Command command) {
         try {
-            if(!isValidCommand(command)) {
-                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.InvalidCommand);
-            }
     
             //The continuous command is invalid if the indicated state is a flag state
             if(isFlagState(state))
@@ -268,41 +241,22 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
-     * Determined whether a given command is valid.
-     * Commands must either require ONLY the subsystem for which they are being used, OR have no requirements
-     * @param command the proposed command
-     * @return if the proposed command is valid or not
-     */
-    private boolean isValidCommand(Command command) {
-        //Commands should only require this one subsystem or no subsystem at all
-        if(command.getRequirements().size() > 1) return false;
-        else return command.getRequirements().contains(this) || command.getRequirements().size() != 1;
-    }
-
-    /**
      * @param proposedTransition The transition that should be compared against all the other transitions
      * @return whether the proposed transition is valid or not
      */
-    private boolean checkIfValidTransition(Transition<E> proposedTransition) {
+    private boolean checkIfValidTransition(TransitionBase<E> proposedTransition) {
         try {
-            //The transition is invalid if it leads from or to the undetermined state
-            if(this.undeterminedState == proposedTransition.getStartState() || this.undeterminedState == proposedTransition.getEndState()) {
-                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.UndeterminedState);
-            }
-
-            //The transition is invalid if the command itself is invalid (has incorrect subsystem requirements)
-            if(!isValidCommand(proposedTransition.getCommand())) {
-                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.CommandRequirements);
-            }
 
             //The transition is invalid if either one of its states have been marked as flag states
             Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
-            if(statesMarkedAsFlag.contains(proposedTransition.getStartState()) || statesMarkedAsFlag.contains(proposedTransition.getEndState()) || statesMarkedAsFlag.contains(proposedTransition.getInterruptionState())) {
+            if(statesMarkedAsFlag.contains(proposedTransition.getStartState())
+                || statesMarkedAsFlag.contains(proposedTransition.getEndState())
+                || statesMarkedAsFlag.contains(proposedTransition.getInterruptionState())) {
                 throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.StateAlreadyFlag);
             }
 
             //Check the other defined transitions to see if there are any conflicts (if they represent the same states, or if they
-            for(Transition<E> t : transitions) {
+            for(TransitionBase<E> t : transitions) {
                 if(!proposedTransition.isValidTransition(t)) {
                     throw new DuplicateTransitionException(getName(), proposedTransition, t);
                 }
@@ -320,8 +274,7 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
     /**
      * Method for controlling the state of the subsystem. DO NOT OVERRIDE this as you would in a normal subsystem
      */
-    @Override
-    public final void periodic() {
+    public final void update() {
 
         //States can only be managed whilst the subsystem is enabled
         if(enabled) {
@@ -371,12 +324,6 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
-     * Method that acts as a replacement for periodic()
-     * DO NOT Override periodic() in your StatedSubsystems
-     */
-    public abstract void update();
-
-    /**
      * Ask for the subsystem to move to a different state
      * If a flag state is provided, the subsystem will start transitioning to its parent state
      * @param state The state to which the subsystem should go
@@ -395,7 +342,7 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
                 throw new TransitionException(getName(), state.name(), TransitionExceptionReason.MissingEndState);
             }
     
-            Transition<E> t = findTransition(currentState, state, transitions);
+            TransitionBase<E> t = findTransition(currentState, state, transitions);
     
             //If a valid transition was found, then start performing it
             if(t != null) {
@@ -441,8 +388,8 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * Search the list of transitions to find which transition should be implemented
      * @return Whatever transition is found. This can be null
      */
-    private Transition<E> findTransition(E startState, E endState, List<Transition<E>> transitions) {
-        for(Transition<E> t : transitions) {
+    private TransitionBase<E> findTransition(E startState, E endState, List<TransitionBase<E>> transitions) {
+        for(TransitionBase<E> t : transitions) {
             if(startState==t.getStartState() && endState==t.getEndState()) return t;
         }
 
@@ -473,15 +420,15 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
 
     //TODO: Make these faster (generate them once and call from them (i.e. when a transition is added perhaps?)) 
     private List<E> getStartStates() {
-        return transitions.stream().map(Transition::getStartState).collect(Collectors.toList());
+        return transitions.stream().map(TransitionBase::getStartState).collect(Collectors.toList());
     }
 
     private List<E> getEndStates() {
-        return transitions.stream().map(Transition::getEndState).collect(Collectors.toList());
+        return transitions.stream().map(TransitionBase::getEndState).collect(Collectors.toList());
     }
 
     private List<E> getInterruptionStates() {
-        return transitions.stream().map(Transition::getInterruptionState).collect(Collectors.toList());
+        return transitions.stream().map(TransitionBase::getInterruptionState).collect(Collectors.toList());
     }
 
     /**
@@ -520,12 +467,6 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
      * @return the state the robot is trying to enter
      */
     public E getDesiredState() {return desiredState;}
-
-    /**
-     * Check if a subsystem is still in its Undetermined state
-     * @return Whether the subsystem has determined itself
-     */
-    public boolean isUndetermined() {return currentState == undeterminedState;}
 
     /**
      * Get the Entry State of the subsystem (the state the subsystem will enter immediately after determining itself
@@ -639,12 +580,11 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
-     * Run an instantaneous transition, which is primarily meant for when the subsystem has just been enabled or disabled to instantly return to an idle state.
-     * This happens immediately, regardless of current state of the subsystem
+     * Forces the subsystem to a specific state
      * @param targetState the state to transition to
      * @param toRun runnable that will run before the transition resolves
      */
-    public void runInstantaneousTransition(E targetState, Runnable toRun) {
+    public void forceState(E targetState, Runnable toRun) {
         toRun.run();
 
         if(currentCommand != null) {
@@ -688,8 +628,6 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
 
     @Override
     public final void initSendable(SendableBuilder builder) {
-        super.initSendable(builder);
-
         builder.setSmartDashboardType("Stated subsystem");
 
         builder.addStringProperty("Name", () -> getName(), null);

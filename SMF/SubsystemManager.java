@@ -10,7 +10,7 @@ import java.util.Map.Entry;
 
 public class SubsystemManager {
     private static SubsystemManager instance;
-    private List<StatedSubsystem<?>> subsystems = new ArrayList<>();
+    private List<StateMachine<?>> subsystems = new ArrayList<>();
 
     SubsystemManager() {}
 
@@ -25,7 +25,7 @@ public class SubsystemManager {
      * Add a subsystem to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
      * @param subsystem subsystem to add to the manager
      */
-    public void registerSubsystem(StatedSubsystem<?> subsystem) {
+    public void registerSubsystem(StateMachine<?> subsystem) {
 
         if(!subsystems.contains(subsystem)) {
             sendSubsystemToNT(subsystem);
@@ -44,7 +44,7 @@ public class SubsystemManager {
      * Send a subsystem through networktables under SmartDashboard
      * @param subsystem the subsystem to be sent to network tables
      */
-    public void sendSubsystemToNT(StatedSubsystem<?> subsystem) {
+    public void sendSubsystemToNT(StateMachine<?> subsystem) {
         //Send the subsystem itself to network tables
         SmartDashboard.putData(subsystem.getName(), subsystem);
 
@@ -59,8 +59,8 @@ public class SubsystemManager {
      * Register a number of subsystems at once
      * @param subsystems array of stated subsystems 
      */
-    public void registerSubsystems(StatedSubsystem<?> ...subsystems) {
-        for(StatedSubsystem<?> s : subsystems) {
+    public void registerSubsystems(StateMachine<?> ...subsystems) {
+        for(StateMachine<?> s : subsystems) {
             registerSubsystem(s);
         }
     }
@@ -72,7 +72,7 @@ public class SubsystemManager {
     public Command determineAllSubsystems() {
         List<Command> commands = new ArrayList<>();
 
-        for(StatedSubsystem s : subsystems) {
+        for(StateMachine s : subsystems) {
             if(s.isUndetermined()) {  
                 commands.add(s.goToStateCommand(s.getEntryState()));
             }
@@ -84,7 +84,7 @@ public class SubsystemManager {
      * Tell all subsystems that they should be enabled
      */
     public void enableAllSubsystems() {
-        for(StatedSubsystem s : subsystems) {
+        for(StateMachine s : subsystems) {
             s.enable();
         }
     }
@@ -93,7 +93,7 @@ public class SubsystemManager {
      * Tell all subsystems that they should be disabled
      */
     public void disableAllSubsystems() {
-        for(StatedSubsystem s : subsystems) {
+        for(StateMachine s : subsystems) {
             s.disable();
         }
     }

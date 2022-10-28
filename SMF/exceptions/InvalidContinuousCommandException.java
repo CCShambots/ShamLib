@@ -12,7 +12,6 @@ public class InvalidContinuousCommandException extends Exception {
         AlreadyFlagState("States cannot have continuous commands when they are already flag states"),
         CommandAlreadyDefined("States cannot have multiple continuous commands"),
         InstanceBasedState("Instance-based states cannot have continuous commands"),
-        InvalidCommand("continuous commands can only require themselves or no subsystems")
         ;
 
         private final String label;
