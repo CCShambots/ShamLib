@@ -30,4 +30,7 @@ public class InstantTransition<E extends Enum<E>> extends TransitionBase<E> {
         toRun.run();
         return () -> true;
     }
+
+    @Override
+    public void cancel() {} //Cancel doesn't need to do anything
 }

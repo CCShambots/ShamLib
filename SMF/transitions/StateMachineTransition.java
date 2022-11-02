@@ -4,27 +4,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.ShamLib.SMF.StateMachine;
 
-public class CommandTransition<E extends Enum<E>> extends TransitionBase<E> {
-    private Command command;
+public class StateMachineTransition<E extends Enum<E>> extends TransitionBase<E> {
+    private StateMachine<?> machine;
     private AtomicBoolean finished = new AtomicBoolean(false);
 
-    public CommandTransition(E startState, E endState, Command command) {
+    public StateMachineTransition(E startState, E endState, StateMachine<?> machine) {
         super(startState, endState);
-        this.command = command.andThen(() -> finished.set(true));
+        this.machine = machine;
     }
 
     @Override
     public String toString() {
-        return "Start state: " + this.startState.name() + ", End state: " + this.endState.name() + ", Command: " + this.command.toString();
+        return "Start state: " + this.startState.name() + ", End state: " + this.endState.name() + ", State machine: " + this.machine.getName();
     }
 
-    public Command getCommand() {return command;}
+    public StateMachine<?> getMachine() {return machine;}
 
     @Override
     public BooleanSupplier execute() {
         finished.set(false);
-        command.schedule();
+        machine.schedule();
         return () -> finished.get();
     }
 

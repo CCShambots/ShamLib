@@ -8,7 +8,8 @@ public class TransitionException extends Exception{
     }
 
     public enum TransitionExceptionReason {
-        MissingEndState("You requested a transition to a state that isn't in the state machine")
+        MissingEndState("You requested a transition to a state that isn't in the state machine"),
+        NotInstanceState("You tried to provide a command for an instance-based state, but the state is not instance based")
         ;
 
         private final String label;

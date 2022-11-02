@@ -29,10 +29,15 @@ public abstract class TransitionBase<E extends Enum<E>> {
     public abstract String toString();
 
     /**
-     * Run the transition, and then provide a 
-     * @return
+     * Run (or start) the transition, then return a BooleanSupplier indicating whether it is finished
+     * @return whether the transition is finished
      */
     public abstract BooleanSupplier execute();
+
+    /**
+     * Cancel the transition (if it's currently running)
+     */
+    public abstract void cancel();
 
     public E getStartState() {return startState;}
     public E getEndState() {return endState;}

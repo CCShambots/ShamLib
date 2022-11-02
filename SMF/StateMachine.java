@@ -5,16 +5,13 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.ShamLib.SMF.exceptions.DeterminationException;
 import frc.robot.ShamLib.SMF.exceptions.DuplicateTransitionException;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException;
-import frc.robot.ShamLib.SMF.exceptions.DeterminationException.DeterminationReason;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
@@ -40,15 +37,23 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private E flagState;
     private E desiredState;
 
+    private E startingState;
+
     private TransitionBase<E> currentTransition;
     private boolean transitioning = false;
+    private BooleanSupplier transitionFinished = () -> false;
     private Command currentCommand = null;
-    private boolean needToScheduleTransitionCommand = false;
     private boolean enabled = false;
+
+    private Mode currentMode = Mode.Standard;
+    private List<E> submachineStates = new ArrayList<>();
+    private StateMachine<?> currentSubMachine;
     
-    public StateMachine(Class<E> enumType) {
+    public StateMachine(Class<E> enumType, E startingState) {
         flagStates = new EnumMap<>(enumType);
         continuousCommands = new EnumMap<>(enumType);
+        
+        this.startingState = startingState;
     }
 
     /**
@@ -63,13 +68,20 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         addTransition(state2, state1, command2);
     }
     
+    /**
+     * Creates an InstantTransition back and forth between two states
+     * @param state1 One state
+     * @param state2 The other state
+     * @param toRun1 The runnable to run betwen state1 to state2
+     * @param toRun2 The runnable to run between state2 to state1
+     */
     protected void addCommutativeTransition(E state1, E state2, Runnable toRun1, Runnable toRun2) {
         addTransition(state1, state2, toRun1);
         addTransition(state2, state1, toRun2);
     }
 
     /**
-     * Create a transition between / among many states easily. A transition with the same command will be created going from every provided start state
+     * Create a CommandTransition between / among many states easily. A transition with the same command will be created going from every provided start state
      * to every provided end state
      * @param startingStates all starting states to apply the transitions to
      * @param endingStates all ending states to apply the transitions to
@@ -84,17 +96,68 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     /**
-     * Create transitions to one end state from many start states.
-     * This can be useful for cancelling subroutines that consist of many states
+     * Create CommandTransitions to one end state from many start states.
+     * @param startStates the states which can go to the end state
      * @param endState the one state that you are going towards
      * @param command The command to be run for the transition
-     * @param startStates the states which can go to the end state
      */
-    protected void addMultiTransitions(E endState, Command command, E... startStates) {
+    protected void addMultiTransitions(E[] startStates, E endState, Command command) {
        for(E state : startStates) {
            addTransition(state, endState, command);
        }
     }
+
+    /**
+     * Create CommandTransitions to one end state from many start states.
+     * @param startState the state to start at
+     * @param endStates the states at which the transition can end
+     * @param command The command to be run for the transition
+     */
+    protected void addMultiTransitions(E startState, E[] endStates, Command command) {
+       for(E state : endStates) {
+           addTransition(startState, state, command);
+       }
+    }
+
+    /**
+     * Create an InstantTransition between / among many states easily. A transition with the same command will be created going from every provided start state
+     * to every provided end state
+     * @param startingStates all starting states to apply the transitions to
+     * @param endingStates all ending states to apply the transitions to
+     * @param toRun the runnable to run
+     */
+    protected void addOmniTransition(E[] startingStates, E[] endingStates, Runnable toRun) {
+        for(E start : startingStates) {
+            for (E end : endingStates) {
+                addTransition(start, end, toRun);
+            }
+        }
+    }
+
+    /**
+     * Create InstantTransitions to one end state from many start states.
+     * @param startStates the states which can go to the end state
+     * @param endState the one state that you are going towards
+     * @param toRun The runnable to be run
+     */
+    protected void addMultiTransitions(E[] startStates, E endState, Runnable toRun) {
+       for(E state : startStates) {
+           addTransition(state, endState, toRun);
+       }
+    }
+
+    /**
+     * Create InstantTransitions from one start state to many end states.
+     * @param startState the state to start at
+     * @param endStates the states at which the transition can end
+     * @param toRun The runnable to be run
+     */
+    protected void addMultiTransitions(E startState, E[] endStates, Runnable toRun) {
+       for(E state : endStates) {
+           addTransition(startState, state, toRun);
+       }
+    }
+
 
     /**
      * Creates a CommandTransition between two states
@@ -156,7 +219,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     protected boolean addFlagState(E parentState, E flagState, BooleanSupplier condition) {
         try {
             //If the flag state is already registered as part of transitions, it is invalid
-            if(getStartStates().contains(flagState) || getEndStates().contains(flagState) || getInterruptionStates().contains(flagState)) {
+            if(getStartStates().contains(flagState) || getEndStates().contains(flagState)) {
                 throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.PartOfTransition);
             }
     
@@ -250,8 +313,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
             //The transition is invalid if either one of its states have been marked as flag states
             Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
             if(statesMarkedAsFlag.contains(proposedTransition.getStartState())
-                || statesMarkedAsFlag.contains(proposedTransition.getEndState())
-                || statesMarkedAsFlag.contains(proposedTransition.getInterruptionState())) {
+                || statesMarkedAsFlag.contains(proposedTransition.getEndState())) {
                 throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.StateAlreadyFlag);
             }
 
@@ -272,38 +334,21 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     /**
-     * Method for controlling the state of the subsystem. DO NOT OVERRIDE this as you would in a normal subsystem
+     * Method for controlling the state of the state machine
      */
     public final void update() {
 
         //States can only be managed whilst the subsystem is enabled
         if(enabled) {
 
-            //If a command needs to be scheduled, and the previous command that was canceled is no longer scheduled, schedule the transition command
-            if(needToScheduleTransitionCommand) {
-                needToScheduleTransitionCommand = false;
-                currentCommand = currentTransition.getCommand();
-                currentCommand.schedule();
+            if(currentMode == Mode.Submachine) {
+                if(currentSubMachine != null) {
+                    currentSubMachine.update();
+                }
             }
 
-            //If a transition has finished, check for a continuous command
-            if(currentCommand != null) {
-                if(transitioning && !currentCommand.isScheduled()) {
-                    transitioning = false;
-                    currentState = desiredState;
-                    flagState = null;
-                    currentCommand = continuousCommands.get(currentState);
-    
-                    //Add a decorator to the command that will remove the instance-based
-                    //command once it has finished running
-                    if(perInstanceStates.contains(currentState)) {
-                        continuousCommands.remove(currentState);
-                    }
-                    
-                    if(currentCommand != null) {
-                        currentCommand.schedule();
-                    }
-                }
+            if(transitioning && transitionFinished.getAsBoolean()) {
+                finishTransition();
             }
 
             //Check for flag states and activate exactly one of them
@@ -319,8 +364,27 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
                 }
             }
         }
+    }
 
-        update();
+    /**
+     * Takes a finished transtiion and updates the current robot state.
+     * It searches for a continuous command to schedule
+     */
+    private void finishTransition() {
+        transitioning = false;
+        currentState = desiredState;
+        flagState = null;
+        currentCommand = continuousCommands.get(currentState);
+
+        //Remove the command from the list of continuous command if the state is instance-based
+        if(perInstanceStates.contains(currentState)) {
+            continuousCommands.remove(currentState);
+        }
+        
+        //Schedule the command if one is found
+        if(currentCommand != null) {
+            currentCommand.schedule();
+        }
     }
 
     /**
@@ -349,7 +413,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     
                 //If a transition is already occurring, cancel it
                 if(transitioning) {
-                    cancelTransition();
+                    currentTransition.cancel();
                 }
     
                 //If a continuous command is running, cancel it
@@ -359,8 +423,13 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     
                 desiredState = state;
                 currentTransition = t;
-                needToScheduleTransitionCommand = true;
                 transitioning = true;
+
+                transitionFinished = t.execute();
+
+                if(transitionFinished.getAsBoolean()) {
+                    finishTransition();
+                }
             } else return false;
     
             return true;
@@ -377,11 +446,17 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * @return whether a transition was successfully found
      */
     public boolean requestTransition(E state, Command command) {
-        if(perInstanceStates.contains(state)) {
-            continuousCommands.put(state, command);
-        } else return false;
-
-        return requestTransition(state);
+        try {
+            if(perInstanceStates.contains(state)) {
+                continuousCommands.put(state, command);
+            } else throw new TransitionException(getName(), state.name(), TransitionExceptionReason.NotInstanceState);
+    
+            return requestTransition(state);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -412,7 +487,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     public final boolean cancelTransition() {
         if(transitioning && currentCommand != null) {
             currentCommand.cancel();
-            currentState = currentTransition.getInterruptionState();
+            currentState = currentTransition.getStartState();
             return true;
         }
         return false;
@@ -425,10 +500,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
     private List<E> getEndStates() {
         return transitions.stream().map(TransitionBase::getEndState).collect(Collectors.toList());
-    }
-
-    private List<E> getInterruptionStates() {
-        return transitions.stream().map(TransitionBase::getInterruptionState).collect(Collectors.toList());
     }
 
     /**
@@ -460,7 +531,9 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * Find the current state the subsystem is in
      * @return Either the current state, or the current flag state (if there is a flag state)
      */
-    public final E getCurrentState() {return flagState != null ? flagState : currentState;}
+    public final E getCurrentState() {
+        return flagState != null ? flagState : currentState;
+    }
 
     /**
      * Find the current state the subsystem is trying to reach
@@ -592,13 +665,21 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
             currentCommand = null;
         }
 
-        currentTransition = null;
         flagState = null;
 
         currentState = targetState;
     }
 
     public void rescheduleContinuousCommand() {transitioning = true; currentCommand = new InstantCommand();}
+
+    /**
+     * Reset the state machine by going back to the starting state of the subsytem and resetting the mode of the subsystem
+     */
+    public void reset() {
+        forceState(startingState, () -> {
+            currentMode = Mode.Standard;
+        });
+    }
 
 
     /**
@@ -610,7 +691,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         if(enabled) onEnable();
-        else onDisable();
+        else {
+            currentTransition.cancel();
+            onDisable();
+        }
     }
 
     /**
@@ -658,4 +742,8 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * @return Map of Keys and values that will be sent when a Subsystem is registered in the Subsystem Manager
      */
     public Map<String, Sendable> additionalSendables() {return new HashMap<>();}
+
+    public enum Mode {
+        Standard, Submachine
+    }
 }
