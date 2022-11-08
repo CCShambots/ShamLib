@@ -8,7 +8,8 @@ public class FlagStateException extends Exception{
     public enum FlagStateReason {
         PartOfTransition("Flag states cannot be part of an existing transition"),
         FlagAlreadyParent("Flag states cannot already be marked as parent states"),
-        ParentAlreadyFlag("Parent states cannot already be flag states")
+        ParentAlreadyFlag("Parent states cannot already be flag states"),
+        AlreadySubmachine("Flag states cannot be submachine states")
         ;
 
         private final String label;

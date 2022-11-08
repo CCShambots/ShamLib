@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.SMF;
 
+import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -11,14 +12,21 @@ import frc.robot.ShamLib.SMF.exceptions.FlagStateException;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException;
+import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
+import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException.SubmachineReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
+import frc.robot.ShamLib.SMF.states.ContinuousState;
+import frc.robot.ShamLib.SMF.states.FlagState;
+import frc.robot.ShamLib.SMF.states.StateBase;
+import frc.robot.ShamLib.SMF.states.SubmachineState;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.InstantTransition;
+import frc.robot.ShamLib.SMF.transitions.StateMachineTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.*;
@@ -27,10 +35,8 @@ import java.util.stream.Collectors;
 
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
-    private final List<TransitionBase<E>> transitions = new ArrayList<>();
-    private final Map<E, List<FlagState<E>>> flagStates;
-    private final List<E> perInstanceStates = new ArrayList<>();
-    private final Map<E, Command> continuousCommands;
+    private final List<TransitionBase<E>> transitions = new ArrayList<>();    
+    private Set<StateBase<E>> states = new HashSet<>();
     
     private E entryState;
     private E currentState;
@@ -46,13 +52,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private boolean enabled = false;
 
     private Mode currentMode = Mode.Standard;
-    private List<E> submachineStates = new ArrayList<>();
     private StateMachine<?> currentSubMachine;
+
     
-    public StateMachine(Class<E> enumType, E startingState) {
-        flagStates = new EnumMap<>(enumType);
-        continuousCommands = new EnumMap<>(enumType);
-        
+    public StateMachine(E startingState) {        
         this.startingState = startingState;
     }
 
@@ -198,6 +201,18 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         return true;
     }
 
+    private StateBase<E> acquireState(E enumValue, ) {
+        StateBase<E> state = states.stream().filter((e) -> e.getValue() == enumValue).findFirst().orElse(null);
+        if(state != null) return state;
+        else {
+
+        }
+    }
+
+    private void changeState(E value) {
+
+    }
+
     /**
      * Set the state that the state machine will default to when it starts
      * @param entryState
@@ -232,9 +247,13 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
             if(getStatesMarkedAsParent().contains(flagState)) {
                 throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.ParentAlreadyFlag);
             }
+
+            if() {
+                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.AlreadySubmachine);
+            }
     
-            //Register the parent state as a new parent state if it does not yet have flag states
-            if(!flagStates.containsKey(parentState)) flagStates.put(parentState, new ArrayList<>());
+            //Register the parent state as a new parent state if it does not yet have flag state
+            if(!getStatesMarkedAsFlag().contains(parentState)) flagStates.put(parentState, new ArrayList<>());
     
             flagStates.get(parentState).add(new FlagState<>(flagState, condition));
             return true;
@@ -257,18 +276,37 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     protected boolean setContinuousCommand(E state, Command command) {
         try {
     
-            //The continuous command is invalid if the indicated state is a flag state
             if(isFlagState(state))
                 throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.AlreadyFlagState);
             if(continuousCommands.containsKey(state)){
                 throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.CommandAlreadyDefined);
             } else if(perInstanceStates.contains(state)) {
                 throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.InstanceBasedState);
+            }else if() {
+                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.AlreadySubmachine);
             }
-            else continuousCommands.put(state, command);
-
+            else addState(state).put(state, command);
+addState
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    protected boolean addSubmachineState(E state, StateMachine<?> machine) {
+        try {
+        
+            if(isFlagState(state)) {
+                throw new SubmachineStateException(getName(), state.name(), machine, SubmachineReason.AlreadyFlagState);
+            }else if(isContinuousCommand(state)) {
+                throw new SubmachineStateException(getName(), state.name(), machine, SubmachineReason.AlreadyContinuousCommand);
+            }
+
+            submachineStates.put(state, machine);
+
+            return true; 
+        }catch (Exception e) {
             e.printStackTrace();
             return false;
         }
@@ -295,12 +333,15 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     private boolean isFlagState(E state) {
-        Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
-        if(statesMarkedAsFlag.contains(state)) {
+        return getStatesMarkedAsFlag().contains(state);
+    }
 
-            return true;
-        }
-        return statesMarkedAsFlag.contains(state);
+    private boolean isSubmachineState(E state) {
+        return getSubmachineStates().contains(state);
+    }
+
+    private boolean isContinuousCommand(E state) {
+        return continuousCommands.containsKey(state);
     }
 
     /**
@@ -374,6 +415,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         transitioning = false;
         currentState = desiredState;
         flagState = null;
+
+        if(currentState instanceof ContinuousState) {
+            ()
+        }
         currentCommand = continuousCommands.get(currentState);
 
         //Remove the command from the list of continuous command if the state is instance-based
@@ -471,9 +516,9 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         return null;
     }
 
-    private E findParentState(E state) {
-        for(Map.Entry<E, List<FlagState<E>>> entry: flagStates.entrySet()) {
-            if(entry.getValue().stream().map(FlagState::getState).collect(Collectors.toList()).contains(state)) return entry.getKey();
+    private FlagState<E> findParentState(E state) {
+        for(FlagState<E> entry : getStatesMarkedAsFlag()) {
+            if(entry.getValue() == state) return entry;
         }
 
         //Simply return null if it's not found (this function should only be run once it has been verified that the input state is a flag state
@@ -493,7 +538,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         return false;
     }
 
-    //TODO: Make these faster (generate them once and call from them (i.e. when a transition is added perhaps?)) 
     private List<E> getStartStates() {
         return transitions.stream().map(TransitionBase::getStartState).collect(Collectors.toList());
     }
@@ -502,23 +546,37 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         return transitions.stream().map(TransitionBase::getEndState).collect(Collectors.toList());
     }
 
-    /**
-     * Get a set of all states that have been marked as flag states
-     * @return all states marked as flags
-     */
-    private Set<E> getStatesMarkedAsFlag() {
-        Set<E> states = new HashSet<>();
+    private Set<FlagState<E>> getStatesMarkedAsFlag() {
+        Set<FlagState<E>> flagStates = new HashSet<>();
 
-        for(List<FlagState<E>> flagState : flagStates.values()) {
-            states.addAll(flagState.stream().map(FlagState::getState).collect(Collectors.toSet()));
+        for(StateBase<E> state : states) {
+            try {
+                flagStates.add((FlagState<E>) state);
+            } catch (Exception e) {
+
+            }
         }
 
-        return states;
+        return flagStates;
+    }
+
+    private Set<SubmachineState<E>> getSubmachineStates() {
+        Set<SubmachineState<E>> submachineStates = new HashSet<>();
+
+        for(StateBase<E> submachineState : states) {
+            submachineStates.add((SubmachineState<E>) submachineState);
+        }
+
+        return submachineStates;
     }
 
 
     private Set<E> getStatesMarkedAsParent() {
-        return flagStates.keySet();
+        return getStatesMarkedAsFlag().stream().map(FlagState::getParentState).collect(Collectors.toSet());
+    }
+
+    private void addState(StateBase<E> state) {
+        states.add(state);
     }
 
     /**
@@ -746,4 +804,5 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     public enum Mode {
         Standard, Submachine
     }
+
 }
