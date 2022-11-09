@@ -20,10 +20,8 @@ import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.Contin
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
 import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException.SubmachineReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
-import frc.robot.ShamLib.SMF.states.ContinuousState;
-import frc.robot.ShamLib.SMF.states.FlagState;
-import frc.robot.ShamLib.SMF.states.StateBase;
-import frc.robot.ShamLib.SMF.states.SubmachineState;
+import frc.robot.ShamLib.SMF.graph.DirectionalGraph;
+import frc.robot.ShamLib.SMF.states.*;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.InstantTransition;
 import frc.robot.ShamLib.SMF.transitions.StateMachineTransition;
@@ -34,6 +32,8 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
+
+    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph = new DirectionalGraph<>();
 
     private final List<TransitionBase<E>> transitions = new ArrayList<>();    
     private Set<StateBase<E>> states = new HashSet<>();
@@ -185,10 +185,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
     /**
      * Alternate version of the method where an interruption state can be stated
-     * @param startState where the subsystem is when beginning the transition
-     * @param endState where the subsystem ends the transition
-     * @param interruptionState the state that should be switched to if the transition is interrupted
-     * @param command the command that runs through the transition
+     * @param suggestedTransition the transition to add
      * @return whether adding the transition was successful
      */
     protected boolean addTransition(TransitionBase<E> suggestedTransition) {
@@ -199,18 +196,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         transitions.add(suggestedTransition);
         
         return true;
-    }
-
-    private StateBase<E> acquireState(E enumValue, ) {
-        StateBase<E> state = states.stream().filter((e) -> e.getValue() == enumValue).findFirst().orElse(null);
-        if(state != null) return state;
-        else {
-
-        }
-    }
-
-    private void changeState(E value) {
-
     }
 
     /**
