@@ -1,6 +1,5 @@
 package frc.robot.ShamLib.SMF;
 
-import edu.wpi.first.math.trajectory.Trajectory.State;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,7 +23,6 @@ import frc.robot.ShamLib.SMF.graph.DirectionalGraph;
 import frc.robot.ShamLib.SMF.states.*;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.InstantTransition;
-import frc.robot.ShamLib.SMF.transitions.StateMachineTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.*;
@@ -33,11 +31,8 @@ import java.util.stream.Collectors;
 
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
-    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph = new DirectionalGraph<>();
+    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph = new DirectionalGraph<>(StandardState::new);
 
-    private final List<TransitionBase<E>> transitions = new ArrayList<>();    
-    private Set<StateBase<E>> states = new HashSet<>();
-    
     private E entryState;
     private E currentState;
     private E flagState;
@@ -193,7 +188,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         //End the function if the transition conflicts
         if(!checkIfValidTransition(suggestedTransition)) return false;
 
-        transitions.add(suggestedTransition);
+        stateGraph.findOrCreateVertex(suggestedTransition.getStartState()).getValue().setPartOfTransition(true);
+        stateGraph.findOrCreateVertex(suggestedTransition.getEndState()).getValue().setPartOfTransition(true);
+
+        stateGraph.addEdge(suggestedTransition.getStartState(), suggestedTransition.getEndState(), suggestedTransition);
         
         return true;
     }
@@ -211,36 +209,38 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * Add a new flag state to better indicate the subsystem's state
      * If a subsystem fulfills two flag states at once, the one it displays will be unreliable
      * NOTE: If you add two of the same flag state, unexpected behavior will occur
-     * @param parentState the parent state in which the flag state should trigger
-     * @param flagState the flag state which can potentially be active
+     * @param parentValue the parent state in which the flag state should trigger
+     * @param flagValue the flag state which can potentially be active
      * @param condition under what conditions the flag state should be active
      * @return whether the flag state was added successfully
      */
-    protected boolean addFlagState(E parentState, E flagState, BooleanSupplier condition) {
+    protected boolean addFlagState(E parentValue, E flagValue, BooleanSupplier condition) {
         try {
+            StateBase<E> flagState = stateGraph.findOrCreateVertex(flagValue).getValue();
+            StateBase<E> parentState = stateGraph.findOrCreateVertex(parentValue).getValue();
+
             //If the flag state is already registered as part of transitions, it is invalid
-            if(getStartStates().contains(flagState) || getEndStates().contains(flagState)) {
-                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.PartOfTransition);
+            if(flagState.isPartOfTransition() || parentState.isPartOfTransition()) {
+                throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.PartOfTransition);
             }
     
             //Any state marked as a flag state cannot be a parent state
-            if(getStatesMarkedAsFlag().contains(parentState)) {
-                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.FlagAlreadyParent);
+            if(getStatesMarkedAsFlag().contains(parentValue)) {
+                throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.FlagAlreadyParent);
             }
     
             //Any state already marked as a parent state cannot become a flag state
-            if(getStatesMarkedAsParent().contains(flagState)) {
-                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.ParentAlreadyFlag);
+            if(getStatesMarkedAsParent().contains(flagValue)) {
+                throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.ParentAlreadyFlag);
             }
 
             if() {
-                throw new FlagStateException(getName(), flagState.name(), parentState.name(), FlagStateReason.AlreadySubmachine);
+                throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.AlreadySubmachine);
             }
     
-            //Register the parent state as a new parent state if it does not yet have flag state
-            if(!getStatesMarkedAsFlag().contains(parentState)) flagStates.put(parentState, new ArrayList<>());
-    
-            flagStates.get(parentState).add(new FlagState<>(flagState, condition));
+            //Register the vertex as a flag state
+            stateGraph.findOrCreateVertex(flagValue).setValue(new FlagState<>(flagValue, parentValue, condition));
+
             return true;
 
         }catch (Exception e) {
