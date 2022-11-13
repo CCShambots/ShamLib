@@ -7,9 +7,9 @@ import java.util.Map;
 
 public class Vertex<V, E, T extends Enum<T>> {
     //Map to pair end states with edges
-    private Map<Vertex<V,E,T>, DirectionalEdge<V, E, T>> edges = new HashMap<>();
+    private final Map<Vertex<V,E,T>, DirectionalEdge<V, E, T>> edges = new HashMap<>();
 
-    private T enumValue;
+    private final T enumValue;
     private V value;
 
     public Vertex(T enumValue, V value) {

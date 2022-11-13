@@ -6,20 +6,15 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.ShamLib.SMF.exceptions.DuplicateTransitionException;
-import frc.robot.ShamLib.SMF.exceptions.FlagStateException;
-import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException;
-import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException;
-import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException;
-import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException;
-import frc.robot.ShamLib.SMF.exceptions.TransitionException;
+import frc.robot.ShamLib.SMF.exceptions.*;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
 import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
-import frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
 import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException.SubmachineReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
 import frc.robot.ShamLib.SMF.graph.DirectionalGraph;
+import frc.robot.ShamLib.SMF.graph.Vertex;
+import frc.robot.ShamLib.SMF.graph.exceptions.ExistingEdgeException;
 import frc.robot.ShamLib.SMF.states.*;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.InstantTransition;
@@ -28,6 +23,8 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
+
+import static frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason.*;
 
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
@@ -70,7 +67,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * Creates an InstantTransition back and forth between two states
      * @param state1 One state
      * @param state2 The other state
-     * @param toRun1 The runnable to run betwen state1 to state2
+     * @param toRun1 The runnable to run between state1 to state2
      * @param toRun2 The runnable to run between state2 to state1
      */
     protected void addCommutativeTransition(E state1, E state2, Runnable toRun1, Runnable toRun2) {
@@ -180,20 +177,25 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
     /**
      * Alternate version of the method where an interruption state can be stated
-     * @param suggestedTransition the transition to add
+     * @param t the transition to add
      * @return whether adding the transition was successful
      */
-    protected boolean addTransition(TransitionBase<E> suggestedTransition) {
+    protected boolean addTransition(TransitionBase<E> t) {
 
         //End the function if the transition conflicts
-        if(!checkIfValidTransition(suggestedTransition)) return false;
+        if(!checkIfValidTransition(t)) return false;
 
-        stateGraph.findOrCreateVertex(suggestedTransition.getStartState()).getValue().setPartOfTransition(true);
-        stateGraph.findOrCreateVertex(suggestedTransition.getEndState()).getValue().setPartOfTransition(true);
+        stateGraph.findOrCreateVertex(t.getStartState()).getValue().setPartOfTransition(true);
+        stateGraph.findOrCreateVertex(t.getEndState()).getValue().setPartOfTransition(true);
 
-        stateGraph.addEdge(suggestedTransition.getStartState(), suggestedTransition.getEndState(), suggestedTransition);
-        
-        return true;
+        try {
+            stateGraph.addEdge(t.getStartState(), t.getEndState(), t);
+            return true;
+        } catch (ExistingEdgeException e) {
+            new InvalidTransitionException(getName(), t, TransitionReason.DuplicateTransition).printStackTrace();
+        }
+
+        return false;
     }
 
     /**
@@ -225,16 +227,16 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
             }
     
             //Any state marked as a flag state cannot be a parent state
-            if(getStatesMarkedAsFlag().contains(parentValue)) {
+            if(getFlagStates().contains(parentState)) {
                 throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.FlagAlreadyParent);
             }
     
             //Any state already marked as a parent state cannot become a flag state
-            if(getStatesMarkedAsParent().contains(flagValue)) {
+            if(getParentStates().contains(flagState)) {
                 throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.ParentAlreadyFlag);
             }
 
-            if() {
+            if(getSubmachineStates().contains(flagState)) {
                 throw new FlagStateException(getName(), flagValue.name(), parentValue.name(), FlagStateReason.AlreadySubmachine);
             }
     
@@ -254,24 +256,26 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * This command should run indefinitely (i.e. isFinished() should never return true).
      * The command will be canceled when a transition begins.
      * Only the first command registered for a certain state will be
-     * @param state the state that should have a continuous command
+     * @param stateValue the state that should have a continuous command
      * @param command the command that should run once the subsystem reaches that state
      * @return whether the command was successfully added
      */
-    protected boolean setContinuousCommand(E state, Command command) {
+    protected boolean setContinuousCommand(E stateValue, Command command) {
         try {
-    
-            if(isFlagState(state))
-                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.AlreadyFlagState);
-            if(continuousCommands.containsKey(state)){
-                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.CommandAlreadyDefined);
-            } else if(perInstanceStates.contains(state)) {
-                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.InstanceBasedState);
-            }else if() {
-                throw new InvalidContinuousCommandException(getName(), command, state.name(), ContinuousCommandReason.AlreadySubmachine);
+            StateBase<E> state = stateGraph.findOrCreateVertex(stateValue).getValue();
+            StateBase<E> proposedState = new ContinuousState<>(stateValue, command);
+            if (isFlagState(state)) {
+                throw new IncompatibleStateException(this, state, proposedState);
+            } else if(isContinuousCommandState(state)){
+                throw new IncompatibleStateException(this, state, proposedState);
+            } else if(isInstanceBasedState(state)) {
+                throw new IncompatibleStateException(this, state, proposedState);
+            }else if(isSubmachineState(stateValue)) {
+                throw new IncompatibleStateException(this, state, proposedState);
             }
-            else addState(state).put(state, command);
-addState
+            else stateGraph.findOrCreateVertex(stateValue)
+                        .setValue(proposedState);
+
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -279,16 +283,19 @@ addState
         }
     }
 
-    protected boolean addSubmachineState(E state, StateMachine<?> machine) {
+    protected boolean addSubmachineState(E stateValue, StateMachine<?> machine) {
         try {
-        
+            StateBase<E> state = stateGraph.findOrCreateVertex(stateValue).getValue();
+            StateBase<E> proposedState = new SubmachineState<>(stateValue, machine);
             if(isFlagState(state)) {
-                throw new SubmachineStateException(getName(), state.name(), machine, SubmachineReason.AlreadyFlagState);
-            }else if(isContinuousCommand(state)) {
-                throw new SubmachineStateException(getName(), state.name(), machine, SubmachineReason.AlreadyContinuousCommand);
+                throw new IncompatibleStateException(this, state, proposedState);
+            }else if(isContinuousCommandState(state)) {
+                throw new IncompatibleStateException(this, state, proposedState);
+            } else if(isInstanceBasedState(state)) {
+                throw new IncompatibleStateException(this, state, proposedState);
             }
-
-            submachineStates.put(state, machine);
+            stateGraph.findOrCreateVertex(stateValue)
+                    .setValue(proposedState);
 
             return true; 
         }catch (Exception e) {
@@ -300,15 +307,16 @@ addState
     /**
      * Define a state that will start a different continuous command each time it is reached
      * This state cannot be a flag state, or a state with a continuous command
-     * @param state the state that should become instance-based
+     * @param stateValue the state that should become instance-based
      * @return whether the state was successfully marked as instance-based
      */
-    protected boolean addInstanceBasedState(E state) {
+    protected boolean addInstanceBasedState(E stateValue) {
         try {
-            if(isFlagState(state)) throw new InstanceBasedStateException(getName(), state.name(), InstanceBasedReason.AlreadyFlagState);
+            StateBase<E> state = stateGraph.findOrCreateVertex(stateValue).getValue();
+            StateBase<E> proposedState = new InstanceBasedState<>(stateValue);
+            if(isFlagState(state)) throw new IncompatibleStateException(this, state, proposedState);
     
-            if(!continuousCommands.containsKey(state)) perInstanceStates.add(state);
-            else throw new InstanceBasedStateException(getName(), state.name(), InstanceBasedReason.AlreadyContinuous);
+            if(isContinuousCommandState(state)) throw new IncompatibleStateException(this, state, proposedState);
 
             return true;
         } catch (Exception e) {
@@ -317,17 +325,7 @@ addState
         }
     }
 
-    private boolean isFlagState(E state) {
-        return getStatesMarkedAsFlag().contains(state);
-    }
 
-    private boolean isSubmachineState(E state) {
-        return getSubmachineStates().contains(state);
-    }
-
-    private boolean isContinuousCommand(E state) {
-        return continuousCommands.containsKey(state);
-    }
 
     /**
      * @param proposedTransition The transition that should be compared against all the other transitions
@@ -337,7 +335,7 @@ addState
         try {
 
             //The transition is invalid if either one of its states have been marked as flag states
-            Set<E> statesMarkedAsFlag = getStatesMarkedAsFlag();
+            Set<E> statesMarkedAsFlag = getFlagStates();
             if(statesMarkedAsFlag.contains(proposedTransition.getStartState())
                 || statesMarkedAsFlag.contains(proposedTransition.getEndState())) {
                 throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.StateAlreadyFlag);
@@ -393,7 +391,7 @@ addState
     }
 
     /**
-     * Takes a finished transtiion and updates the current robot state.
+     * Takes a finished transition and updates the current robot state.
      * It searches for a continuous command to schedule
      */
     private void finishTransition() {
@@ -428,7 +426,7 @@ addState
         try {
 
             //Since this sate has been marked as a flag state, we find its parent state and request to transition to that
-            if(getStatesMarkedAsFlag().contains(state)) {
+            if(getFlagStates().contains(state)) {
                 state = findParentState(state);
             }
     
@@ -502,7 +500,7 @@ addState
     }
 
     private FlagState<E> findParentState(E state) {
-        for(FlagState<E> entry : getStatesMarkedAsFlag()) {
+        for(FlagState<E> entry : getFlagStates()) {
             if(entry.getValue() == state) return entry;
         }
 
@@ -523,45 +521,81 @@ addState
         return false;
     }
 
-    private List<E> getStartStates() {
-        return transitions.stream().map(TransitionBase::getStartState).collect(Collectors.toList());
+    //TODO: Precompute these upon each change to the graph
+    private Set<E> getStartStates() {
+        return stateGraph.getEdges().stream().map((e) -> e.getValue().getStartState()).collect(Collectors.toSet());
     }
 
-    private List<E> getEndStates() {
-        return transitions.stream().map(TransitionBase::getEndState).collect(Collectors.toList());
+    private Set<E> getEndStates() {
+        return stateGraph.getEdges().stream().map((e) -> e.getValue().getEndState()).collect(Collectors.toSet());
     }
 
-    private Set<FlagState<E>> getStatesMarkedAsFlag() {
-        Set<FlagState<E>> flagStates = new HashSet<>();
-
-        for(StateBase<E> state : states) {
-            try {
-                flagStates.add((FlagState<E>) state);
-            } catch (Exception e) {
-
-            }
-        }
-
-        return flagStates;
+    private Set<FlagState<E>> getFlagStates() {
+        return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof FlagState)
+                .stream().map((e) -> (FlagState<E>) e).collect(Collectors.toSet());
     }
 
     private Set<SubmachineState<E>> getSubmachineStates() {
-        Set<SubmachineState<E>> submachineStates = new HashSet<>();
-
-        for(StateBase<E> submachineState : states) {
-            submachineStates.add((SubmachineState<E>) submachineState);
-        }
-
-        return submachineStates;
+        return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof SubmachineState)
+                .stream().map((e) -> (SubmachineState<E>) e).collect(Collectors.toSet());
     }
 
-
-    private Set<E> getStatesMarkedAsParent() {
-        return getStatesMarkedAsFlag().stream().map(FlagState::getParentState).collect(Collectors.toSet());
+    private Set<E> getParentStates() {
+        return getFlagStates().stream().map(FlagState::getParentState).collect(Collectors.toSet());
     }
 
-    private void addState(StateBase<E> state) {
-        states.add(state);
+    private Set<ContinuousState<E>> getContinuousCommandStates() {
+        return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof ContinuousState)
+                .stream().map((e) -> (ContinuousState<E>) e).collect(Collectors.toSet());
+    }
+
+    private Set<InstanceBasedState<E>> getInstanceBasedStates() {
+        return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof InstanceBasedState)
+                .stream().map((e) -> (InstanceBasedState<E>) e).collect(Collectors.toSet());
+    }
+
+    private boolean isStartState(E state) {
+        return getStartStates().contains(state);
+    }
+
+    private boolean isEndState(E state) {
+        return getEndStates().contains(state);
+    }
+
+    private boolean isFlagState(E state) {
+        return getFlagStates().stream().anyMatch((e) -> e.getValue() == state);
+    }
+
+    private boolean isFlagState(StateBase<E> state)  {
+        return state instanceof FlagState;
+    }
+
+    private boolean isParentState(E state) {
+        return getParentStates().contains(state);
+    }
+
+    private boolean isSubmachineState(E state) {
+        return getSubmachineStates().stream().anyMatch((e) -> e.getValue() == state);
+    }
+
+    private boolean isSubmachineState(StateBase<E> state) {
+        return state instanceof SubmachineState;
+    }
+
+    private boolean isContinuousCommandState(E state) {
+        return getContinuousCommandStates().stream().anyMatch((e) -> e.getValue() == state);
+    }
+
+    private boolean isContinuousCommandState(StateBase<E> state) {
+        return state instanceof ContinuousState;
+    }
+
+    private boolean isInstanceBasedState(E state) {
+        return getInstanceBasedStates().stream().anyMatch((e) -> e.getValue() == state);
+    }
+
+    private boolean isInstanceBasedState(StateBase<E> state) {
+        return state instanceof InstanceBasedState;
     }
 
     /**
@@ -716,7 +750,7 @@ addState
     public void rescheduleContinuousCommand() {transitioning = true; currentCommand = new InstantCommand();}
 
     /**
-     * Reset the state machine by going back to the starting state of the subsytem and resetting the mode of the subsystem
+     * Reset the state machine by going back to the starting state of the subsystem and resetting the mode of the subsystem
      */
     public void reset() {
         forceState(startingState, () -> {

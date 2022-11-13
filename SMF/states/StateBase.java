@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 public abstract class StateBase<E extends Enum<E>> {
-    private E value;
+    private final E value;
     private boolean partOfTransition = false;
 
-    private List<FlagState<E>> flagStates = new ArrayList<>();
+    private final List<FlagState<E>> flagStates = new ArrayList<>();
 
     public StateBase(E value) {
         this.value = value;
@@ -31,7 +31,8 @@ public abstract class StateBase<E extends Enum<E>> {
 
     @Override
     public String toString() {
-        return value.name();
+        return
+                "Value: " + value.name() + ", Type: " + getType() + ", part of a transition: " + isPartOfTransition();
     }
 
     public abstract String getType();

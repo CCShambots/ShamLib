@@ -10,11 +10,12 @@ public class SubmachineStateException extends Exception{
 
     public enum SubmachineReason {
         AlreadyFlagState("Submachine states cannot already be flag states"),
-        AlreadyContinuousCommand("Submachine states cannot be continuous commands")
+        AlreadyContinuousCommand("Submachine states cannot be continuous commands"),
+        AlreadyInstanceBasedState("Submachine states cannot be instance-based states")
         ;
 
         private final String label;
-        private SubmachineReason(String label) {
+        SubmachineReason(String label) {
             this.label = label;
         }
     }

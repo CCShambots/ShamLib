@@ -10,6 +10,7 @@ public class InvalidTransitionException extends Exception{
 
     public enum TransitionReason {
         StateAlreadyFlag("Transitions cannot include states marked as flag states"),
+        DuplicateTransition("You've already definted the command to and from the two states")
         ;
 
         private final String label;
