@@ -13,7 +13,7 @@ public class FlagState<E extends Enum<E>> extends StateBase<E>{
         this.parentState = parentState;
     }
 
-    public BooleanSupplier getSuppler() {return supplier;}
+    public BooleanSupplier getCondition() {return supplier;}
     public E getParentState() {return parentState;}
 
     @Override

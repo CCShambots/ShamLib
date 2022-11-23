@@ -1,12 +1,14 @@
 package frc.robot.ShamLib.SMF.transitions;
 
+import frc.robot.ShamLib.SMF.states.StateBase;
+
 import java.util.function.BooleanSupplier;
 
 public abstract class TransitionBase<E extends Enum<E>> {
-    protected final E startState;
-    protected final E endState;
+    protected final StateBase<E> startState;
+    protected final StateBase<E> endState;
 
-    public TransitionBase(E startState, E endState) {
+    public TransitionBase(StateBase<E> startState, StateBase<E> endState) {
         this.startState = startState;
         this.endState = endState;
     }
@@ -17,7 +19,7 @@ public abstract class TransitionBase<E extends Enum<E>> {
      * @param other the transition to compare
      * @return whether the transition is a duplicate or not
      */
-    public boolean isValidTransition(TransitionBase<E> other) {
+    public boolean isValid(TransitionBase<E> other) {
         if(other.startState == this.startState && other.endState == this.endState) return false;
 
         return true;
@@ -39,6 +41,14 @@ public abstract class TransitionBase<E extends Enum<E>> {
      */
     public abstract void cancel();
 
-    public E getStartState() {return startState;}
-    public E getEndState() {return endState;}
+    public E getStartValue() {return startState.getValue();}
+    public E getEndValue() {return endState.getValue();}
+
+    public StateBase<E> getStartState() {
+        return startState;
+    }
+
+    public StateBase<E> getEndState() {
+        return endState;
+    }
 }

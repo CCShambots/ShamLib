@@ -8,12 +8,9 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.ShamLib.SMF.exceptions.*;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
-import frc.robot.ShamLib.SMF.exceptions.InstanceBasedStateException.InstanceBasedReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
-import frc.robot.ShamLib.SMF.exceptions.SubmachineStateException.SubmachineReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
 import frc.robot.ShamLib.SMF.graph.DirectionalGraph;
-import frc.robot.ShamLib.SMF.graph.Vertex;
 import frc.robot.ShamLib.SMF.graph.exceptions.ExistingEdgeException;
 import frc.robot.ShamLib.SMF.states.*;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
@@ -24,18 +21,16 @@ import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-import static frc.robot.ShamLib.SMF.exceptions.InvalidContinuousCommandException.ContinuousCommandReason.*;
-
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
-    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph = new DirectionalGraph<>(StandardState::new);
+    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph;
 
-    private E entryState;
-    private E currentState;
-    private E flagState;
-    private E desiredState;
+    private StateBase<E> entryState;
+    private StateBase<E> currentState;
+    private StateBase<E> flagState;
+    private StateBase<E> desiredState;
 
-    private E startingState;
+    private StateBase<E> startingState;
 
     private TransitionBase<E> currentTransition;
     private boolean transitioning = false;
@@ -46,9 +41,30 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private Mode currentMode = Mode.Standard;
     private StateMachine<?> currentSubMachine;
 
-    
+    private List<TransitionBase<E>> transitions;
+    private Set<E> startStates;
+    private Set<E> endStates;
+    private Set<FlagState<E>> flagStates;
+    private Set<SubmachineState<E>> submachineStates;
+    private Set<E> parentStates;
+    private Set<ContinuousState<E>> continuousStates;
+    private Set<InstanceBasedState<E>> instanceBasedStates;
+
     public StateMachine(E startingState) {        
-        this.startingState = startingState;
+        this.startingState = stateGraph.findOrCreateVertex(startingState).getValue();
+        this.currentState = stateGraph.findOrCreateVertex(startingState).getValue();
+
+        stateGraph = new DirectionalGraph<>(StandardState::new, () -> {
+            transitions = stateGraph.getEdges().stream().map((e) -> e.getValue()).collect(Collectors.toList());
+
+            startStates = computeStartStates();
+            endStates = computeEndStates();
+            flagStates = computeFlagStates();
+            submachineStates = computeSubmachineStates();
+            parentStates = computeParentStates();
+            continuousStates = computeContinuousCommandStates();
+            instanceBasedStates = computeInstanceBasedStates();
+        });
     }
 
     /**
@@ -156,7 +172,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
     /**
      * Creates a CommandTransition between two states
-     * @param startState where the machine begins the transition transition
+     * @param startState where the machine begins the transition
      * @param endState where the subsystem ends the transition
      * @param command the command that runs
      */
@@ -185,11 +201,11 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         //End the function if the transition conflicts
         if(!checkIfValidTransition(t)) return false;
 
-        stateGraph.findOrCreateVertex(t.getStartState()).getValue().setPartOfTransition(true);
-        stateGraph.findOrCreateVertex(t.getEndState()).getValue().setPartOfTransition(true);
+        stateGraph.findOrCreateVertex(t.getStartValue()).getValue().setPartOfTransition(true);
+        stateGraph.findOrCreateVertex(t.getEndValue()).getValue().setPartOfTransition(true);
 
         try {
-            stateGraph.addEdge(t.getStartState(), t.getEndState(), t);
+            stateGraph.addEdge(t.getStartValue(), t.getEndValue(), t);
             return true;
         } catch (ExistingEdgeException e) {
             new InvalidTransitionException(getName(), t, TransitionReason.DuplicateTransition).printStackTrace();
@@ -198,14 +214,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         return false;
     }
 
-    /**
-     * Set the state that the state machine will default to when it starts
-     * @param entryState
-     */
-    protected void setEntryState(E entryState) {
-        this.entryState = entryState;
-        this.currentState = entryState;
-    }
 
     /**
      * Add a new flag state to better indicate the subsystem's state
@@ -335,15 +343,16 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         try {
 
             //The transition is invalid if either one of its states have been marked as flag states
-            Set<E> statesMarkedAsFlag = getFlagStates();
-            if(statesMarkedAsFlag.contains(proposedTransition.getStartState())
-                || statesMarkedAsFlag.contains(proposedTransition.getEndState())) {
-                throw new InvalidTransitionException(getName(), proposedTransition, TransitionReason.StateAlreadyFlag);
+            if(isFlagState(proposedTransition.getStartValue())) {
+                throw new IncompatibleStateException(this, stateGraph.findOrCreateVertex(proposedTransition.getStartValue()).getValue(), proposedTransition.getStartState());
+            }
+            if(isFlagState(proposedTransition.getEndValue())) {
+                throw new IncompatibleStateException(this, stateGraph.findOrCreateVertex(proposedTransition.getEndValue()).getValue(), proposedTransition.getEndState());
             }
 
             //Check the other defined transitions to see if there are any conflicts (if they represent the same states, or if they
-            for(TransitionBase<E> t : transitions) {
-                if(!proposedTransition.isValidTransition(t)) {
+            for(TransitionBase<E> t : getTransitions()) {
+                if(!proposedTransition.isValid(t)) {
                     throw new DuplicateTransitionException(getName(), proposedTransition, t);
                 }
             }
@@ -378,11 +387,11 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
             //Check for flag states and activate exactly one of them
             //There is only one flag position potentially active at a time
             //Also negate the existing flag state if its condition is no longer true
-            if(flagStates.get(currentState) != null) {
-                for(FlagState<E> f : flagStates.get(currentState)) {
+            if(getParentStates().contains(currentState)) {
+                for(FlagState<E> f : currentState.getFlagStates()) {
                     if(f.getCondition().getAsBoolean()) {
-                        flagState = f.getState();
-                    } else if(f.getState() == flagState) {
+                        flagState = f;
+                    } else if(f == flagState) {
                         flagState = null;
                     }
                 }
@@ -400,13 +409,11 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         flagState = null;
 
         if(currentState instanceof ContinuousState) {
-            ()
+            currentCommand = ((ContinuousState<E>) currentState).getCommand();
         }
-        currentCommand = continuousCommands.get(currentState);
 
-        //Remove the command from the list of continuous command if the state is instance-based
-        if(perInstanceStates.contains(currentState)) {
-            continuousCommands.remove(currentState);
+        if(currentState instanceof InstanceBasedState) {
+            ((InstanceBasedState<E>) currentState).clearCommand();
         }
         
         //Schedule the command if one is found
@@ -416,25 +423,17 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     /**
-     * Ask for the subsystem to move to a different state
-     * If a flag state is provided, the subsystem will start transitioning to its parent state
      * @param state The state to which the subsystem should go
      * @return whether a transition was successfully found
      */
     public boolean requestTransition(E state) {
-
         try {
-
-            //Since this sate has been marked as a flag state, we find its parent state and request to transition to that
-            if(getFlagStates().contains(state)) {
-                state = findParentState(state);
-            }
     
             if(!getEndStates().contains(state)) {
                 throw new TransitionException(getName(), state.name(), TransitionExceptionReason.MissingEndState);
             }
     
-            TransitionBase<E> t = findTransition(currentState, state, transitions);
+            TransitionBase<E> t = findTransition(currentState.getValue(), state);
     
             //If a valid transition was found, then start performing it
             if(t != null) {
@@ -491,13 +490,14 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * Search the list of transitions to find which transition should be implemented
      * @return Whatever transition is found. This can be null
      */
-    private TransitionBase<E> findTransition(E startState, E endState, List<TransitionBase<E>> transitions) {
-        for(TransitionBase<E> t : transitions) {
-            if(startState==t.getStartState() && endState==t.getEndState()) return t;
+    private TransitionBase<E> findTransition(E startState, E endState) {
+        for(TransitionBase<E> t : getTransitions()) {
+            if(startState==t.getStartValue() && endState==t.getEndValue()) return t;
         }
 
         return null;
     }
+
 
     private FlagState<E> findParentState(E state) {
         for(FlagState<E> entry : getFlagStates()) {
@@ -522,36 +522,68 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     //TODO: Precompute these upon each change to the graph
-    private Set<E> getStartStates() {
-        return stateGraph.getEdges().stream().map((e) -> e.getValue().getStartState()).collect(Collectors.toSet());
+    private Set<E> computeStartStates() {
+        return stateGraph.getEdges().stream().map((e) -> e.getValue().getStartValue()).collect(Collectors.toSet());
     }
 
-    private Set<E> getEndStates() {
-        return stateGraph.getEdges().stream().map((e) -> e.getValue().getEndState()).collect(Collectors.toSet());
+    private Set<E> computeEndStates() {
+        return stateGraph.getEdges().stream().map((e) -> e.getValue().getEndValue()).collect(Collectors.toSet());
     }
 
-    private Set<FlagState<E>> getFlagStates() {
+    private Set<FlagState<E>> computeFlagStates() {
         return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof FlagState)
                 .stream().map((e) -> (FlagState<E>) e).collect(Collectors.toSet());
     }
 
-    private Set<SubmachineState<E>> getSubmachineStates() {
+    private Set<SubmachineState<E>> computeSubmachineStates() {
         return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof SubmachineState)
                 .stream().map((e) -> (SubmachineState<E>) e).collect(Collectors.toSet());
     }
 
-    private Set<E> getParentStates() {
+    private Set<E> computeParentStates() {
         return getFlagStates().stream().map(FlagState::getParentState).collect(Collectors.toSet());
     }
 
-    private Set<ContinuousState<E>> getContinuousCommandStates() {
+    private Set<ContinuousState<E>> computeContinuousCommandStates() {
         return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof ContinuousState)
                 .stream().map((e) -> (ContinuousState<E>) e).collect(Collectors.toSet());
     }
 
-    private Set<InstanceBasedState<E>> getInstanceBasedStates() {
+    private Set<InstanceBasedState<E>> computeInstanceBasedStates() {
         return stateGraph.getVertexObjectsWithCondition((e) -> e instanceof InstanceBasedState)
                 .stream().map((e) -> (InstanceBasedState<E>) e).collect(Collectors.toSet());
+    }
+
+    public List<TransitionBase<E>> getTransitions() {
+        return transitions;
+    }
+
+    public Set<E> getStartStates() {
+        return startStates;
+    }
+
+    public Set<E> getEndStates() {
+        return endStates;
+    }
+
+    public Set<FlagState<E>> getFlagStates() {
+        return flagStates;
+    }
+
+    public Set<SubmachineState<E>> getSubmachineStates() {
+        return submachineStates;
+    }
+
+    public Set<E> getParentStates() {
+        return parentStates;
+    }
+
+    public Set<ContinuousState<E>> getContinuousStates() {
+        return continuousStates;
+    }
+
+    public Set<InstanceBasedState<E>> getInstanceBasedStates() {
+        return instanceBasedStates;
     }
 
     private boolean isStartState(E state) {
@@ -583,7 +615,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     private boolean isContinuousCommandState(E state) {
-        return getContinuousCommandStates().stream().anyMatch((e) -> e.getValue() == state);
+        return getContinuousStates().stream().anyMatch((e) -> e.getValue() == state);
     }
 
     private boolean isContinuousCommandState(StateBase<E> state) {
@@ -629,7 +661,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * @param state the state to check
      * @return Whether the subsystem is either in the given state or child flag state
      */
-    public final boolean isInState(E state) {return currentState == state || flagState == state;}
+    public final boolean isInState(E state) {return currentState.getValue() == state || flagState.getValue() == state;}
 
     /**
      * Determine whether a subsystem is in any of the passed in states
@@ -638,7 +670,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      */
     public final boolean isInState(E... states) {
         for(E state : states) {
-            if(currentState == state || flagState == state) return true;
+            if(currentState.getValue() == state || flagState.getValue() == state) return true;
         }
 
         return false;
@@ -648,13 +680,13 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
      * Get the current parent state the subsystem is in
      * @return the parent state
      */
-    public final E getParentState() {return currentState;}
+    public final StateBase<E> getParentState() {return currentState;}
 
     /**
      * Get the flag state the subsystem is in (if any)
      * @return the flag state; Note: This value can be null
      */
-    public final E getFlagState() {return flagState;}
+    public final StateBase<E> getFlagState() {return flagState;}
 
     /**
      * @return The name by which you'd like the subsystem to be represented
