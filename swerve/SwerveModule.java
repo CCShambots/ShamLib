@@ -1,11 +1,13 @@
 package frc.robot.ShamLib.swerve;
 
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -42,7 +44,8 @@ public class SwerveModule implements Sendable{
                         double maxTurnVelo,
                         double maxTurnAccel,
                         double turnRatio,
-                        double driveRatio
+                        double driveRatio,
+                        SupplyCurrentLimitConfiguration currentLimit
     ) {
         this.moduleOffset = moduleOffset;
         
@@ -61,13 +64,14 @@ public class SwerveModule implements Sendable{
         turnMotor.setInverted(true); //All turn modules were inverted
         turnMotor.configNeutralDeadband(0.01);
         turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+        turnMotor.configSupplyCurrentLimit(currentLimit);
 
         driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);
         driveMotor.configFactoryDefault();
 
         driveMotor.setSensorPhase(false);
         driveMotor.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, 30);
-        driveMotor.configSupplyCurrentLimit(Constants.CURRENT_LIMIT);
+        driveMotor.configSupplyCurrentLimit(currentLimit);
 
         setDesiredState(
             new SwerveModuleState(0, getTurnAngle())
@@ -85,9 +89,10 @@ public class SwerveModule implements Sendable{
                         double maxTurnVelo,
                         double maxTurnAccel,
                         double turnRatio,
-                        double driveRatio
+                        double driveRatio,
+                        SupplyCurrentLimitConfiguration currentLimit
     ) {
-        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio);
+        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit);
     }
 
     private double normalizeDegrees(double degrees) {
@@ -114,8 +119,16 @@ public class SwerveModule implements Sendable{
         return driveMotor.getVelocity();
     } 
 
+    public double getDriveMotorPosition() {
+        return driveMotor.getPosition();
+    }
+
     public SwerveModuleState getCurrentState() {
         return new SwerveModuleState(getDriveMotorRate(), getTurnAngle());
+    }
+
+    public SwerveModulePosition getCurrentPosition() {
+        return new SwerveModulePosition(getDriveMotorPosition(), getTurnAngle());
     }
 
     public Translation2d getModuleOffset() {return moduleOffset;}

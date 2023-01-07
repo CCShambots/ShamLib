@@ -3,10 +3,6 @@ package frc.robot.ShamLib;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.commands.auto.FiveBall;
-import frc.robot.commands.auto.OneBall;
-import frc.robot.commands.auto.TwoBall;
-import frc.robot.util.RobotManager;
 
 import java.util.HashMap;
 import java.util.Map;
