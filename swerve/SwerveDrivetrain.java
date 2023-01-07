@@ -42,6 +42,8 @@ public class SwerveDrivetrain extends SubsystemBase {
     protected Field2d field;
     private boolean extraTelemetry;
 
+    //TODO: Fix errors
+
     /**
      * Constructor for your typical swerve drivetarin with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
