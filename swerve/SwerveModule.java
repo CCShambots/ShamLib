@@ -11,7 +11,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import frc.robot.Constants;
 import frc.robot.ShamLib.motors.MotionMagicTalonFX;
 import frc.robot.ShamLib.motors.PIDFGains;
 import frc.robot.ShamLib.motors.VelocityTalonFX;
