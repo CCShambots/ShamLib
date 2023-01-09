@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.SMF.wrappers;
+package frc.robot.ShamLib.SMF.wrappers.NTComms;
 
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.util.sendable.Sendable;
