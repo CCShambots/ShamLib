@@ -457,6 +457,7 @@ public abstract class StatedSubsystem<E extends Enum<E>> extends SubsystemBase {
         return false;
     }
 
+    //TODO: 😭😭😭
     private void outputErrorMessage(String message, String... args) {
         System.out.println("-----" + message + "!!!!-----");
         for(String a : args) {
