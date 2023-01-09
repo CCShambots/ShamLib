@@ -1,24 +1,20 @@
 package frc.robot.ShamLib.SMF;
 
 import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import frc.robot.ShamLib.SMF.wrappers.NTComms.INetworkTableCommunicator;
 
 import java.util.*;
 import java.util.Map.Entry;
 
 public class SubsystemManager {
-    private static SubsystemManager instance;
+    private INetworkTableCommunicator NTComms;
+
     private List<StatedSubsystem<?>> subsystems = new ArrayList<>();
 
-    SubsystemManager() {}
-
-    public static synchronized SubsystemManager getInstance() {
-        if(instance == null) {
-            instance = new SubsystemManager();
-        }
-        return instance;
+    public SubsystemManager(INetworkTableCommunicator NTComms) {
+        this.NTComms = NTComms;
     }
 
     /**
@@ -46,11 +42,11 @@ public class SubsystemManager {
      */
     public void sendSubsystemToNT(StatedSubsystem<?> subsystem) {
         //Send the subsystem itself to network tables
-        SmartDashboard.putData(subsystem.getName(), subsystem);
+        NTComms.putData(subsystem.getName(), subsystem);
 
         //Send any additional sendables that should be included in the subsystem
         for(Map.Entry<String, Sendable> e : subsystem.additionalSendables().entrySet()) {
-            SmartDashboard.putData(subsystem.getName() + "/" + e.getKey(), e.getValue());
+            NTComms.putData(subsystem.getName() + "/" + e.getKey(), e.getValue());
         }
     }
 
