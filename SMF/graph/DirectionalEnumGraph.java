@@ -12,14 +12,9 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<V>
 
     public DirectionalEnumGraph(Class<T> transitionType, Class<V> enumType) {
         int c = enumType.getEnumConstants().length;
-        int[] sizes = new int[c];
-
-        for (int i = 0; i < c; i++) {
-            sizes[i] = c;
-        }
 
         //this is kinda gross but idk what else to do
-        adjacencyMap = (T[][]) Array.newInstance(transitionType, sizes);
+        adjacencyMap = (T[][]) Array.newInstance(transitionType, c, c);
         edges = new ArrayList<>();
     }
 
