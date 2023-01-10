@@ -2,95 +2,72 @@ package frc.robot.ShamLib.SMF.graph;
 
 import frc.robot.ShamLib.SMF.graph.exceptions.ExistingEdgeException;
 import frc.robot.ShamLib.SMF.graph.exceptions.UnfoundVertexException;
+import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class DirectionalGraph<V, E, T extends Enum<T>> {
-    private final Map<T, Vertex<V, E, T>> vertices = new HashMap<>();
-    private final List<DirectionalEdge<V, E, T>> edges = new ArrayList<>(); // Just for storage
+public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
+    private List<List<T>> adjacencyMap;
+    private HashMap<V, Integer> valIndexMap;
+    private List<T> transitions;
+    private Class<?> transitionType;
 
-    private final Function<T, V> defaultVertexFunction;
+    private int count;
 
-    private final Runnable toRunOnChange;
+    public DirectionalGraph(Class<?> type) {
+        adjacencyMap = new ArrayList<>();
+        valIndexMap = new HashMap<>();
 
-    public DirectionalGraph(Function<T, V> defaultVertexFunction, Runnable toRunOnChange) {
-        this.defaultVertexFunction = defaultVertexFunction;
-        this.toRunOnChange = toRunOnChange;
+        transitionType = type;
+        count = 0;
     }
 
-    public DirectionalGraph(Function<T, V> defaultVertexFunction) {
-        this(defaultVertexFunction, () -> {});
+    public void addVertex(V state) {
+        if (valIndexMap.containsKey(state)) return;
+
+        valIndexMap.put(state, count);
+        //yeah i know
+        adjacencyMap.add(Arrays.asList(((T[]) Array.newInstance(transitionType, count + 1))));
+
+        for (int i = 0; i < adjacencyMap.size() - 1; i++) {
+            adjacencyMap.get(i).add(null);
+        }
+
+        count++;
     }
 
-    private Supplier<V> bind(Function<T, V> fn, T val) {
-        return () -> fn.apply(val);
+    public void addDirectionalEdge(T transition) {
+        if (getDirectionalEdge(transition.getStartValue(), transition.getEndValue()) != null) return;
+
+        setDirectionalEdge(transition);
     }
 
-    public Vertex<V, E, T> addVertex(T enumValue, V value) {
-        Vertex<V, E, T> v = new Vertex<>(enumValue, value);
-        vertices.put(enumValue, v);
+    public void setDirectionalEdge(T transition) {
+        T at = getDirectionalEdge(transition.getStartValue(), transition.getEndValue());
 
-        toRunOnChange.run();
-        return v;
+        transitions.remove(at);
+        transitions.add(transition);
+        adjacencyMap.get(valIndexMap.get(transition.getStartValue())).set(valIndexMap.get(transition.getEndValue()), transition);
     }
 
-    private Vertex<V, E, T> createDefaultVertex(T enumValue) {
-        return addVertex(enumValue, bind(defaultVertexFunction, enumValue).get());
+    public T getDirectionalEdge(V start, V end) {
+        //TODO: fix this bad error :)
+        if (!valIndexMap.containsKey(start) || !valIndexMap.containsKey(end)) throw new RuntimeException("start or end state no existy existy");
+
+        //omg .get .get .get .get aaaaaaaaaaaaaaaaaaaaa
+        return adjacencyMap.get(valIndexMap.get(start)).get(valIndexMap.get(end));
     }
 
-    public Vertex<V, E, T> findVertex(T enumValue) {
-        return vertices.get(enumValue);
+    public Set<V> getVertices() {
+        return valIndexMap.keySet();
     }
 
-    public Vertex<V, E, T> findOrCreateVertex(T enumValue) {
-        Vertex<V, E, T> fromList = findVertex(enumValue);
-
-        if(fromList != null) return fromList;
-
-        return createDefaultVertex(enumValue);
+    public List<T> getEdges() {
+        return transitions;
     }
-
-    public void addEdge(T start, T end, E edgeValue) throws ExistingEdgeException {
-        Vertex<V, E, T> startVertex = vertices.get(start);
-        Vertex<V, E, T> endVertex = vertices.get(end);
-
-        if(startVertex == null) createDefaultVertex(start);
-        if(endVertex == null) createDefaultVertex(end);
-        DirectionalEdge<V, E, T> edge = new DirectionalEdge<>(startVertex, endVertex, edgeValue);
-
-        startVertex.addEdge(edge);
-        edges.add(edge);
-
-        toRunOnChange.run();
-    }
-
-    public DirectionalEdge<V, E, T> findEdge(T start, T end) throws UnfoundVertexException {
-        Vertex<V, E, T> startVertex = vertices.get(start);
-        Vertex<V, E, T> endVertex = vertices.get(end);
-
-        if(startVertex == null || endVertex == null) {
-            return startVertex.findEdge(endVertex);
-        } else throw new UnfoundVertexException();
-    }
-
-    public Map<T, Vertex<V, E, T>> getVertices() {
-        return vertices;
-    }
-
-    public List<DirectionalEdge<V, E, T>> getEdges() {
-        return edges;
-    }
-
-    public Set<Vertex<V, E, T>> getVerticesWithCondition(Predicate<Vertex<V, E, T>> fn) {
-       return vertices.values().stream().filter(fn).collect(Collectors.toSet());
-    }
-
-    public Set<V> getVertexObjectsWithCondition(Predicate<V> condition) {
-        return vertices.values().stream().map(Vertex::getValue).filter(condition).collect(Collectors.toSet());
-    }
-
 }

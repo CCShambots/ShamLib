@@ -15,5 +15,9 @@ public class ContinuousState<E extends Enum<E>> extends StateBase<E> {
     public Command getCommand() {
         return command;
     }
-    
+
+    @Override
+    public String getType() {
+        return "Continuous state";
+    }
 }
