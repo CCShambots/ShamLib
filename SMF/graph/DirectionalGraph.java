@@ -9,29 +9,13 @@ import java.util.stream.Stream;
 
 public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     //TODO: rename transition to edge and state to node
-    private List<List<T>> adjacencyMap;
-    private HashMap<V, Integer> valIndexMap;
-    private List<T> transitions;
-    private Class<?> transitionType;
+    private T[][] adjacencyMap;
+    List<T> edges;
 
-    public DirectionalGraph(Class<?> type) {
-        //TODO: premake adjacencymap from size of enum and have set of ints to keep track of ordinals of enum rather than valindexmap
-        adjacencyMap = new ArrayList<>();
-        valIndexMap = new HashMap<>();
-
-        transitionType = type;
-    }
-
-    public void addVertex(V state) {
-        if (valIndexMap.containsKey(state)) return;
-
-        valIndexMap.put(state, adjacencyMap.size());
-        //yeah i know
-        adjacencyMap.add(Arrays.asList(((T[]) Array.newInstance(transitionType, adjacencyMap.size() + 1))));
-
-        for (int i = 0; i < adjacencyMap.size() - 1; i++) {
-            adjacencyMap.get(i).add(null);
-        }
+    public DirectionalGraph(Class<T> transitionType, Class<V> enumType) {
+        //this is kinda gross but idk what else to do
+        adjacencyMap = (T[][]) Array.newInstance(transitionType, enumType.getEnumConstants().length);
+        edges = new ArrayList<>();
     }
 
     public void addEdge(T transition) {
@@ -41,39 +25,25 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     }
 
     public void setEdge(T transition) {
-        T at = getEdge(transition.getStartValue(), transition.getEndValue());
-
-        transitions.remove(at);
-        transitions.add(transition);
-        adjacencyMap.get(valIndexMap.get(transition.getStartValue())).set(valIndexMap.get(transition.getEndValue()), transition);
+        adjacencyMap[transition.getStartValue().ordinal()][transition.getEndValue().ordinal()] = transition;
     }
 
     public T getEdge(V start, V end) {
-        //TODO: fix this bad error :)
-        if (!valIndexMap.containsKey(start) || !valIndexMap.containsKey(end)) throw new RuntimeException("start or end state no existy existy");
-
-        //omg .get .get .get .get aaaaaaaaaaaaaaaaaaaaa
-        return adjacencyMap.get(valIndexMap.get(start)).get(valIndexMap.get(end));
-    }
-
-    public Set<V> getVertices() {
-        return valIndexMap.keySet();
+        return adjacencyMap[start.ordinal()][end.ordinal()];
     }
 
     public List<T> getAllEdges() {
-        return transitions;
+        return edges;
     }
     public List<T> getEdges(V state, EdgeType t) {
         ArrayList<T> outgoing = new ArrayList<>();
         ArrayList<T> incoming = new ArrayList<>();
 
-        if (!valIndexMap.containsKey(state)) return null;
-
-        int j = valIndexMap.get(state);
-
-        for (int i = 0; i < adjacencyMap.size(); i++) {
-            outgoing.add(adjacencyMap.get(i).get(j));
-            incoming.add(adjacencyMap.get(j).get(i));
+        for (int i = 0; i < adjacencyMap.length; i++) {
+            T out = adjacencyMap[i][state.ordinal()];
+            T in = adjacencyMap[state.ordinal()][i];
+            if (out != null) outgoing.add(out);
+            if (in != null) incoming.add(in);
         }
 
         switch (t) {
