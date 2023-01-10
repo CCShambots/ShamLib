@@ -15,6 +15,7 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     private Class<?> transitionType;
 
     public DirectionalGraph(Class<?> type) {
+        //TODO: premake adjacencymap from size of enum and have set of ints to keep track of ordinals of enum rather than valindexmap
         adjacencyMap = new ArrayList<>();
         valIndexMap = new HashMap<>();
 
@@ -36,10 +37,10 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     public void addEdge(T transition) {
         if (getEdge(transition.getStartValue(), transition.getEndValue()) != null) return;
 
-        setDirectionalEdge(transition);
+        setEdge(transition);
     }
 
-    public void setDirectionalEdge(T transition) {
+    public void setEdge(T transition) {
         T at = getEdge(transition.getStartValue(), transition.getEndValue());
 
         transitions.remove(at);
@@ -81,7 +82,8 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
             case Outgoing:
                 return outgoing;
             default:
-                return Stream.concat(incoming.stream(), outgoing.stream()).collect(Collectors.toList());
+                outgoing.addAll(incoming);
+                return outgoing;
         }
     }
 }
