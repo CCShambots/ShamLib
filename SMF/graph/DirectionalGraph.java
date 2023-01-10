@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
+    //TODO: rename transition to edge and state to node
     private List<List<T>> adjacencyMap;
     private HashMap<V, Integer> valIndexMap;
     private List<T> transitions;
