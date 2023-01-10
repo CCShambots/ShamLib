@@ -4,6 +4,8 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     private List<List<T>> adjacencyMap;
@@ -11,45 +13,40 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     private List<T> transitions;
     private Class<?> transitionType;
 
-    private int count;
-
     public DirectionalGraph(Class<?> type) {
         adjacencyMap = new ArrayList<>();
         valIndexMap = new HashMap<>();
 
         transitionType = type;
-        count = 0;
     }
 
     public void addVertex(V state) {
         if (valIndexMap.containsKey(state)) return;
 
-        valIndexMap.put(state, count);
+        valIndexMap.put(state, adjacencyMap.size());
         //yeah i know
-        adjacencyMap.add(Arrays.asList(((T[]) Array.newInstance(transitionType, count + 1))));
+        adjacencyMap.add(Arrays.asList(((T[]) Array.newInstance(transitionType, adjacencyMap.size() + 1))));
 
         for (int i = 0; i < adjacencyMap.size() - 1; i++) {
             adjacencyMap.get(i).add(null);
         }
-
-        count++;
     }
 
-    public void addDirectionalEdge(T transition) {
-        if (getDirectionalEdge(transition.getStartValue(), transition.getEndValue()) != null) return;
+    public void addEdge(T transition) {
+        if (getEdge(transition.getStartValue(), transition.getEndValue()) != null) return;
 
         setDirectionalEdge(transition);
     }
 
     public void setDirectionalEdge(T transition) {
-        T at = getDirectionalEdge(transition.getStartValue(), transition.getEndValue());
+        T at = getEdge(transition.getStartValue(), transition.getEndValue());
 
         transitions.remove(at);
         transitions.add(transition);
         adjacencyMap.get(valIndexMap.get(transition.getStartValue())).set(valIndexMap.get(transition.getEndValue()), transition);
     }
 
-    public T getDirectionalEdge(V start, V end) {
+    public T getEdge(V start, V end) {
         //TODO: fix this bad error :)
         if (!valIndexMap.containsKey(start) || !valIndexMap.containsKey(end)) throw new RuntimeException("start or end state no existy existy");
 
@@ -61,7 +58,29 @@ public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
         return valIndexMap.keySet();
     }
 
-    public List<T> getEdges() {
+    public List<T> getAllEdges() {
         return transitions;
+    }
+    public List<T> getEdges(V state, EdgeType t) {
+        ArrayList<T> outgoing = new ArrayList<>();
+        ArrayList<T> incoming = new ArrayList<>();
+
+        if (!valIndexMap.containsKey(state)) return null;
+
+        int j = valIndexMap.get(state);
+
+        for (int i = 0; i < adjacencyMap.size(); i++) {
+            outgoing.add(adjacencyMap.get(i).get(j));
+            incoming.add(adjacencyMap.get(j).get(i));
+        }
+
+        switch (t) {
+            case Incoming:
+                return incoming;
+            case Outgoing:
+                return outgoing;
+            default:
+                return Stream.concat(incoming.stream(), outgoing.stream()).collect(Collectors.toList());
+        }
     }
 }
