@@ -1,10 +1,10 @@
 package frc.robot.ShamLib.swerve;
 
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
 import com.pathplanner.lib.commands.PPSwerveControllerCommand;
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -12,9 +12,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.*;
@@ -24,11 +23,12 @@ import frc.robot.ShamLib.motors.PIDFGains;
 import java.util.List;
 import java.util.ArrayList;
 
-import static frc.robot.Constants.SwerveDrivetrain.*;
 
 public class SwerveDrivetrain extends SubsystemBase {
 
     protected final List<SwerveModule> modules;
+    protected final SwerveDriveKinematics kDriveKinematics;
+    protected final double maxChassisSpeed;
     private int numModules = 0;
     private WPI_Pigeon2 gyro;
     private double rotationOffset;
@@ -42,12 +42,11 @@ public class SwerveDrivetrain extends SubsystemBase {
     protected Field2d field;
     private boolean extraTelemetry;
 
+    //TODO: Fix errors
+
     /**
      * Constructor for your typical swerve drivetarin with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
-     * @param moduleStdDevs Kalman filter standard deviations for the swerve modules
-     * @param gyroStdDevs Kalman filter standard deviations for the gyro
-     * @param visionStdDevs Kalman filter standard deviations for vision measurements
      * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
      * @param moduleTurnGains PIDF gains for the position of the swerve modules
      * @param maxModuleTurnVelo maximum velocity the turn motors should go
@@ -61,11 +60,9 @@ public class SwerveDrivetrain extends SubsystemBase {
      * @param moduleInfos Array of module infos, one for each module
      */
     public SwerveDrivetrain(int pigeon2ID,
-                            Matrix<N3, N1> moduleStdDevs,
-                            Matrix<N1, N1> gyroStdDevs,
-                            Matrix<N3, N1> visionStdDevs,
                             PIDFGains moduleDriveGains,
                             PIDFGains moduleTurnGains,
+                            double maxChassisSpeed,
                             double maxModuleTurnVelo,
                             double maxModuleTurnAccel,
                             PIDGains teleThetaGains,
@@ -74,10 +71,11 @@ public class SwerveDrivetrain extends SubsystemBase {
                             boolean extraTelemetry,
                             String moduleCanbus,
                             String gyroCanbus,
+                            SupplyCurrentLimitConfiguration currentLimit,
                             ModuleInfo... moduleInfos) {
 
-        //TODO: Construct kDriveKinematics in here
         this.extraTelemetry = extraTelemetry;
+        this.maxChassisSpeed = maxChassisSpeed;
 
         //Apply the gains passed in the constructors
         thetaHoldControllerTele =  teleThetaGains.applyToController();
@@ -96,7 +94,7 @@ public class SwerveDrivetrain extends SubsystemBase {
             offsets[i] = m.offset;
 
             modules.add(new SwerveModule("Module-" + numModules, moduleCanbus, m.turnMotorID, m.driveMotorID,
-                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio));
+                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit));
         }
 
         gyro.configFactoryDefault();
@@ -105,19 +103,15 @@ public class SwerveDrivetrain extends SubsystemBase {
         holdAngle = new Rotation2d(rotationOffset);
         thetaHoldControllerTele.setTolerance(Math.toRadians(1.5));
 
-        odometry = new SwerveDrivePoseEstimator(getCurrentAngle(), new Pose2d(), new SwerveDriveKinematics(offsets), moduleStdDevs, gyroStdDevs, visionStdDevs);
+        kDriveKinematics = new SwerveDriveKinematics(offsets);
+
+        odometry = new SwerveDrivePoseEstimator(kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d());
 
         thetaHoldControllerTele.enableContinuousInput(-Math.PI, Math.PI);
         thetaHoldControllerAuto.enableContinuousInput(-Math.PI, Math.PI);
         field = new Field2d();
     }
 
-
-//            visionPoseEstimation = ComputerVisionUtil.estimateFieldToRobot(
-//                    LIMELIGHT_HEIGHT, GOAL_HEIGHT, LIMELIGHT_ANGLE, Limelight.getInstance().getYOffset().getRadians(), Limelight.getInstance().getXOffset().plus(getRotaryAngle.get()),
-//                    getCurrentAngle(), Geometry.getCurrentTargetPose(getDrivetrainAngle.get(), getRotaryAngle.get(), getLimelightXOffsetAngle.get()),
-//                    new Transform2d(new Translation2d(), new Rotation2d())
-//            );
         
 
     public void addVisionMeasurement(Pose2d pose) {
@@ -132,7 +126,7 @@ public class SwerveDrivetrain extends SubsystemBase {
      * THIS MUST BE CALLED PERIODICALLY
      */
     public void updateOdometry() {
-        odometry.update(getCurrentAngle(), getModuleStates());
+        odometry.update(getCurrentAngle(), getModulePositions());
     }
 
     public SwerveModuleState[] getModuleStates() {
@@ -145,6 +139,19 @@ public class SwerveDrivetrain extends SubsystemBase {
         return states;
     }
 
+    public SwerveModulePosition[] getModulePositions() {
+        SwerveModulePosition[] positions = new SwerveModulePosition[numModules];
+
+        for(int i = 0; i < modules.size(); i++) {
+            positions[i] = modules.get(i).getCurrentPosition();
+        }
+
+        return positions;
+    }
+
+    /**
+     * Should be called periodically if you want the fireld to regularly be updated
+     */
     private void updateField2dObject() {
         Pose2d robotPose = getPose();
         field.setRobotPose(robotPose);
@@ -177,7 +184,7 @@ public class SwerveDrivetrain extends SubsystemBase {
         } else if(allowHoldAngleChange) setHoldAngle(getCurrentAngle());
 
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
-        SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, MAX_LINEAR_SPEED);
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
 
         setModuleStates(swerveModuleStates);
     }
@@ -265,7 +272,7 @@ public class SwerveDrivetrain extends SubsystemBase {
 
     public void resetOdometryPose(Pose2d newPose) {
         resetGyro(newPose.getRotation());
-        odometry.resetPosition(newPose, newPose.getRotation());
+        odometry.resetPosition(newPose.getRotation(), getModulePositions(), newPose);
     }
 
     public void resetOdometryPose() {resetOdometryPose(new Pose2d());}
