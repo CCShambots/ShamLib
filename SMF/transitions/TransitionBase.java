@@ -5,10 +5,10 @@ import frc.robot.ShamLib.SMF.states.StateBase;
 import java.util.function.BooleanSupplier;
 
 public abstract class TransitionBase<E extends Enum<E>> {
-    protected final StateBase<E> startState;
-    protected final StateBase<E> endState;
+    protected final E startState;
+    protected final E endState;
 
-    public TransitionBase(StateBase<E> startState, StateBase<E> endState) {
+    public TransitionBase(E startState, E endState) {
         this.startState = startState;
         this.endState = endState;
     }
@@ -41,14 +41,14 @@ public abstract class TransitionBase<E extends Enum<E>> {
      */
     public abstract void cancel();
 
-    public E getStartValue() {return startState.getValue();}
-    public E getEndValue() {return endState.getValue();}
+    public E getStartValue() {return startState;}
+    public E getEndValue() {return endState;}
 
-    public StateBase<E> getStartState() {
+    public E getStartState() {
         return startState;
     }
 
-    public StateBase<E> getEndState() {
+    public E getEndState() {
         return endState;
     }
 }
