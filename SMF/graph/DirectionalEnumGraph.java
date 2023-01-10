@@ -4,15 +4,13 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.lang.reflect.Array;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class DirectionalGraph<V extends Enum<V>, T extends TransitionBase<V>> {
+public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<V>> {
     //TODO: rename transition to edge and state to node
     private T[][] adjacencyMap;
     List<T> edges;
 
-    public DirectionalGraph(Class<T> transitionType, Class<V> enumType) {
+    public DirectionalEnumGraph(Class<T> transitionType, Class<V> enumType) {
         //this is kinda gross but idk what else to do
         adjacencyMap = (T[][]) Array.newInstance(transitionType, enumType.getEnumConstants().length);
         edges = new ArrayList<>();

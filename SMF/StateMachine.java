@@ -10,7 +10,7 @@ import frc.robot.ShamLib.SMF.exceptions.*;
 import frc.robot.ShamLib.SMF.exceptions.FlagStateException.FlagStateReason;
 import frc.robot.ShamLib.SMF.exceptions.InvalidTransitionException.TransitionReason;
 import frc.robot.ShamLib.SMF.exceptions.TransitionException.TransitionExceptionReason;
-import frc.robot.ShamLib.SMF.graph.DirectionalGraph;
+import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.graph.exceptions.ExistingEdgeException;
 import frc.robot.ShamLib.SMF.states.*;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
-    private DirectionalGraph<StateBase<E>, TransitionBase<E>, E> stateGraph;
+    private DirectionalEnumGraph<StateBase<E>, TransitionBase<E>, E> stateGraph;
 
     private StateBase<E> entryState;
     private StateBase<E> currentState;
@@ -54,7 +54,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         this.startingState = stateGraph.findOrCreateVertex(startingState).getValue();
         this.currentState = stateGraph.findOrCreateVertex(startingState).getValue();
 
-        stateGraph = new DirectionalGraph<>(StandardState::new, () -> {
+        stateGraph = new DirectionalEnumGraph<>(StandardState::new, () -> {
             transitions = stateGraph.getEdges().stream().map((e) -> e.getValue()).collect(Collectors.toList());
 
             startStates = computeStartStates();
