@@ -6,7 +6,6 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<V>> {
-    //TODO: rename transition to edge and state to node
     private T[][] adjacencyMap;
     List<T> edges;
 
