@@ -5,12 +5,14 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.lang.reflect.Array;
 import java.util.*;
 
-public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<V>> {
+public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? extends Enum<V>>> {
     //Array where the index [1][2] = TransitionBase from state at ordinal 1 to state at ordinal 2
     private final T[][] adjacencyMap;
+    private final Class<V> enumType;
 
     public DirectionalEnumGraph(Class<T> transitionType, Class<V> enumType) {
         int c = enumType.getEnumConstants().length;
+        this.enumType = enumType;
         
         //TODO: optimize this somehow because it feels messy?
         //My thought is that it's probably fine. You're write that it's a little gross, but I think it's efficient and good - Barta
@@ -24,9 +26,13 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<V>
      */
     public void addEdge(T transition) {
         //TODO: Should we be throwing an exception here or at least returning a boolean of success or not?
-        if (getEdge(transition.getStartValue(), transition.getEndValue()) != null) return;
+        if (getEdge(fromOrdinal(transition.getStartValue().ordinal()), fromOrdinal(transition.getEndValue().ordinal())) != null) return;
 
         setEdge(transition);
+    }
+
+    private V fromOrdinal(int ordinal) {
+        return enumType.getEnumConstants()[ordinal];
     }
 
     /**

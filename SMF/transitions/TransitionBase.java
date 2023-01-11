@@ -13,7 +13,6 @@ public abstract class TransitionBase<E extends Enum<E>> {
         this.endState = endState;
     }
 
-
     /**
      * Tell if this transition already has the to and from states of `other`
      * @param other the transition to compare
@@ -34,15 +33,15 @@ public abstract class TransitionBase<E extends Enum<E>> {
      * Run (or start) the transition, then return a BooleanSupplier indicating whether it is finished
      * @return whether the transition is finished
      */
-    public abstract BooleanSupplier execute();
+    public abstract void execute();
 
     /**
      * Cancel the transition (if it's currently running)
      */
     public abstract void cancel();
 
-    public E getStartValue() {return startState;}
-    public E getEndValue() {return endState;}
+    public abstract boolean isFinished();
+    public abstract boolean hasStarted();
 
     public E getStartState() {
         return startState;

@@ -8,25 +8,31 @@ import frc.robot.ShamLib.SMF.states.StateBase;
 
 public class CommandTransition<E extends Enum<E>> extends TransitionBase<E> {
     private Command command;
-    private AtomicBoolean finished = new AtomicBoolean(false);
 
-    public CommandTransition(StateBase<E> startState, StateBase<E> endState, Command command) {
+    public CommandTransition(E startState, E endState, Command command) {
         super(startState, endState);
-        this.command = command.andThen(() -> finished.set(true));
     }
 
     @Override
     public String toString() {
-        return "Start state: " + this.startState.getValue().name() + ", End state: " + this.endState.getValue().name() + ", Command: " + this.command.toString();
+        return "Start state: " + this.startState.name() + ", End state: " + this.endState.name() + ", Command: " + this.command.toString();
+    }
+
+    @Override
+    public boolean isFinished() {
+        return command.isFinished();
+    }
+
+    @Override
+    public boolean hasStarted() {
+        return command.isScheduled() || command.isFinished();
     }
 
     public Command getCommand() {return command;}
 
     @Override
-    public BooleanSupplier execute() {
-        finished.set(false);
+    public void execute() {
         command.schedule();
-        return () -> finished.get();
     }
 
     @Override
