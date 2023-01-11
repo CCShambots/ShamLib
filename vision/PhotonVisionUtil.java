@@ -2,6 +2,8 @@ package frc.robot.ShamLib.vision;
 
 import java.util.List;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import org.photonvision.RobotPoseEstimator;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -25,6 +27,13 @@ public class PhotonVisionUtil {
     public Pose2d getRobotPoseFromTarget(PhotonTrackedTarget target) {            
         
         Transform3d camToTarget = target.getBestCameraToTarget(); //Get the transform from the camera to the target
+        RobotPoseEstimator poseEstimator = new RobotPoseEstimator(
+                new AprilTagFieldLayout(),
+                RobotPoseEstimator.PoseStrategy.CLOSEST_TO_REFERENCE_POSE, //TODO: Which of these is actually best?
+
+        )
+
+        You'll put that into the deploy folder in your project and then do AprilTagFieldLayout(GetDeployDirectory() + "/file_name.json") (translate the syntax to your respective language)
         
         Pose3d camPose3d = tags.get(target.getFiducialId()).transformBy(camToTarget.inverse()); //Derive the camera pose from the target's pose
         
