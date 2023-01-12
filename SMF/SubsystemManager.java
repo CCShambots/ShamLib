@@ -36,7 +36,7 @@ public class SubsystemManager {
 
     /**
      * Compose a parallel command group  that will determine the state of every subsystem that has not yet determined itself
-     * @return the command group that will determined every subsystem
+     * @return the command group that will determine every subsystem
      */
     public void determineAllSubsystems() {
         for (StateMachine<?> sm : subsystems) {

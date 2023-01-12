@@ -13,9 +13,7 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
     public DirectionalEnumGraph(Class<V> enumType) {
         int c = enumType.getEnumConstants().length;
         this.enumType = enumType;
-        
-        //TODO: optimize this somehow because it feels messy?
-        //My thought is that it's probably fine. You're write that it's a little gross, but I think it's efficient and good - Barta
+
         adjacencyMap = new Object[c][c];
     }
 
@@ -29,6 +27,12 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
         if (getEdge(fromOrdinal(transition.getStartState().ordinal()), fromOrdinal(transition.getStartState().ordinal())) != null) return;
 
         setEdge(transition);
+    }
+
+    public void addEdges(T... transitions) {
+        for(T transition : transitions) {
+            addEdge(transition);
+        }
     }
 
     private T getAsEdge(int x, int y) {

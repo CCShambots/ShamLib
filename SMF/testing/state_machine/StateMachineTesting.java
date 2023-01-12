@@ -1,23 +1,20 @@
 package frc.robot.ShamLib.SMF.testing.state_machine;
 
-import edu.wpi.first.hal.simulation.SimulatorJNI;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.ShamLib.SMF.StateMachine;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.*;
 
 public class StateMachineTesting {
-    private static ExampleStateMachine stateMachine;
+    private  ExampleStateMachine stateMachine;
 
-    @BeforeAll
-    public static void setUp() {
+    @BeforeEach
+    public void setUp() {
         stateMachine = new ExampleStateMachine("x", ExampleState.A, ExampleState.class);
     }
 
-    @AfterAll
-    public static void tearDown() {
+    @AfterEach
+    public void tearDown() {
     }
 
     @Test
@@ -38,6 +35,12 @@ class ExampleStateMachine extends StateMachine<ExampleState> {
         super(name, undeterminedState, enumType);
     }
 
+    @Override
+    protected void onEnable() {}
+
+    @Override
+    protected void onDisable() {}
+
     private void declareTransitions() {
         addTransition(ExampleState.B, ExampleState.D, new InstantCommand());
         addTransition(ExampleState.D, ExampleState.C, new InstantCommand());
@@ -45,13 +48,16 @@ class ExampleStateMachine extends StateMachine<ExampleState> {
     }
 
     @Override
-    protected void update() {
-
-    }
+    protected void update() {}
 
     @Override
     protected void determineSelf() {
         setState(ExampleState.B);
+    }
+
+    @Override
+    protected void additionalSendableData(SendableBuilder builder) {
+
     }
 }
 

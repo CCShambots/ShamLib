@@ -42,9 +42,7 @@ public class DirectionalEnumGraphTesting {
                 new CommandTransition<>(ExampleState.C, ExampleState.D, new InstantCommand())
         };
 
-        for (CommandTransition<ExampleState> t : transitions) {
-            graph.addEdge(t);
-        }
+        graph.addEdges(transitions);
 
         assert graph.getEdges(ExampleState.A, EdgeType.All).size() == 1;
         assert graph.getEdges(ExampleState.A, EdgeType.Incoming).size() == 0;
