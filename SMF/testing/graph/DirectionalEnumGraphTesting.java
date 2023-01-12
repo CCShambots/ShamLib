@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.testing.graph;
+package frc.robot.ShamLib.SMF.testing.graph;
 
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
