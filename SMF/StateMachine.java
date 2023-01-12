@@ -9,6 +9,7 @@ import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -16,11 +17,13 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
     private TransitionBase<E> currentTransition;
     private TransitionBase<E> queuedTransition;
+    private final HashMap<E, Command> stateCommands;
     private final Timer transitionTimer;
     private final Set<E> currentFlags;
     private final double transitionTimeOut = 2; //TODO: move to SMFConstants
     private final E undeterminedState;
     private E currentState;
+    private boolean enabled;
 
     public StateMachine(String name, E undeterminedState, Class<E> enumType) {
         this.undeterminedState = undeterminedState;
@@ -28,14 +31,38 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         currentTransition = null;
         transitionTimer = new Timer();
         currentFlags = new HashSet<>();
+        stateCommands = new HashMap<>();
         setName(name);
 
         // *puke*
         transitionGraph = new DirectionalEnumGraph<>(new CommandTransition(undeterminedState, undeterminedState, new InstantCommand()).getClass(), enumType);
+        enabled = false;
     }
 
     public E getState() {
         return currentState;
+    }
+
+    public void enable() {
+        determineState();
+        enabled = true;
+    }
+
+    public void disable() {
+        enabled = false;
+        currentTransition.cancel();
+        currentTransition = null;
+        queuedTransition = null;
+        setState(undeterminedState);
+        getCurrentCommand().cancel();
+    }
+
+    public boolean isDetermined() {
+        return currentState != undeterminedState;
+    }
+
+    public void registerStateCommand(E state, Command c) {
+        if (!stateCommands.containsKey(state)) stateCommands.put(state, c);
     }
 
     public void addTransition(E start, E end, Command run) {
@@ -85,21 +112,31 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
             currentTransition.cancel();
             currentTransition = null;
         }
-
-        currentState = undeterminedState;
+        setState(undeterminedState);
     }
 
-    public void update() {
-        updateTransitioning();
+    @Override
+    public void periodic() {
+        if (enabled) {
+            updateTransitioning();
 
-        if (currentTransition != null && !currentTransition.hasStarted()) currentTransition.execute();
+            if (currentTransition != null && !currentTransition.hasStarted()) currentTransition.execute();
+        }
+
+        update();
+    }
+
+    private void setState(E state) {
+        getCurrentCommand().end(true);
+        currentState = state;
+        clearFlags();
+        if (stateCommands.containsKey(state)) stateCommands.get(state).schedule();
     }
 
     private void updateTransitioning() {
         if (currentTransition != null && currentTransition.isFinished()) {
-            currentState = currentTransition.getEndState();
+            setState(currentTransition.getEndState());
             currentTransition = null;
-            clearFlags();
         }
 
         if (queuedTransition != null && (!isTransitioning() || transitionTimer.hasElapsed(transitionTimeOut))) {
@@ -125,7 +162,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public String toString() {
         return "Stated Subsystem Machine - " + getName() + "; In State: " + getState().name() + "; In Transition: " + isTransitioning();
     }
-    abstract void determineState();
+    public void determineState() {
+        if (!isDetermined()) determineSelf();
+    }
+    abstract void update();
+    abstract void determineSelf();
 
     //TODO: logging stuff
 }

@@ -9,51 +9,20 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class SubsystemManager {
-    private static SubsystemManager instance;
-    private List<StateMachine<?>> subsystems = new ArrayList<>();
+    private final List<StateMachine<?>> subsystems = new ArrayList<>();
 
     SubsystemManager() {}
 
-    public static synchronized SubsystemManager getInstance() {
-        if(instance == null) {
-            instance = new SubsystemManager();
-        }
-        return instance;
-    }
 
     /**
      * Add a subsystem to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
      * @param subsystem subsystem to add to the manager
      */
     public void registerSubsystem(StateMachine<?> subsystem) {
-
         if(!subsystems.contains(subsystem)) {
-            sendSubsystemToNT(subsystem);
-
             subsystems.add(subsystem);
-        } else {
-            System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-            System.out.println("YOU'VE ATTEMPTED TO REGISTER A SUBSYSTEM THAT YOU'VE ALREADY REGISTERED");
-            System.out.println("Subsystem info: " + subsystem.getName());
-            System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        }
-
-    }
-
-    /**
-     * Send a subsystem through networktables under SmartDashboard
-     * @param subsystem the subsystem to be sent to network tables
-     */
-    public void sendSubsystemToNT(StateMachine<?> subsystem) {
-        //Send the subsystem itself to network tables
-        SmartDashboard.putData(subsystem.getName(), subsystem);
-
-        //Send any additional sendables that should be included in the subsystem
-        for(Map.Entry<String, Sendable> e : subsystem.additionalSendables().entrySet()) {
-            SmartDashboard.putData(subsystem.getName() + "/" + e.getKey(), e.getValue());
         }
     }
-
 
     /**
      * Register a number of subsystems at once
@@ -69,15 +38,10 @@ public class SubsystemManager {
      * Compose a parallel command group  that will determine the state of every subsystem that has not yet determined itself
      * @return the command group that will determined every subsystem
      */
-    public Command determineAllSubsystems() {
-        List<Command> commands = new ArrayList<>();
-
-        for(StateMachine s : subsystems) {
-            if(s.isUndetermined()) {  
-                commands.add(s.goToStateCommand(s.getEntryState()));
-            }
+    public void determineAllSubsystems() {
+        for (StateMachine<?> sm : subsystems) {
+            sm.determineState();
         }
-        return new ParallelCommandGroup(commands.toArray(new Command[commands.size()]));
     }
 
     /**
