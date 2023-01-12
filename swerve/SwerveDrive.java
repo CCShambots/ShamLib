@@ -24,28 +24,26 @@ import java.util.List;
 import java.util.ArrayList;
 
 
-public class SwerveDrivetrain extends SubsystemBase {
+public class SwerveDrive {
 
     protected final List<SwerveModule> modules;
     protected final SwerveDriveKinematics kDriveKinematics;
     protected final double maxChassisSpeed;
     private int numModules = 0;
-    private WPI_Pigeon2 gyro;
+    private final WPI_Pigeon2 gyro;
     private double rotationOffset;
     private Rotation2d holdAngle;
 
     protected final PIDController thetaHoldControllerTele, thetaHoldControllerAuto, xHoldController, yHoldController;
-    private SwerveDrivePoseEstimator odometry;
+    private final SwerveDrivePoseEstimator odometry;
 
     private boolean fieldRelative = true;
 
     protected Field2d field;
-    private boolean extraTelemetry;
-
-    //TODO: Fix errors
+    private final boolean extraTelemetry;
 
     /**
-     * Constructor for your typical swerve drivetarin with odometry compatible with vision pose estimation
+     * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
      * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
      * @param moduleTurnGains PIDF gains for the position of the swerve modules
@@ -59,20 +57,20 @@ public class SwerveDrivetrain extends SubsystemBase {
      * @param gyroCanbus The canbus the gyro is on (pass "" for default)
      * @param moduleInfos Array of module infos, one for each module
      */
-    public SwerveDrivetrain(int pigeon2ID,
-                            PIDFGains moduleDriveGains,
-                            PIDFGains moduleTurnGains,
-                            double maxChassisSpeed,
-                            double maxModuleTurnVelo,
-                            double maxModuleTurnAccel,
-                            PIDGains teleThetaGains,
-                            PIDGains autoThetaGains,
-                            PIDGains translationGains,
-                            boolean extraTelemetry,
-                            String moduleCanbus,
-                            String gyroCanbus,
-                            SupplyCurrentLimitConfiguration currentLimit,
-                            ModuleInfo... moduleInfos) {
+    public SwerveDrive(int pigeon2ID,
+                       PIDFGains moduleDriveGains,
+                       PIDFGains moduleTurnGains,
+                       double maxChassisSpeed,
+                       double maxModuleTurnVelo,
+                       double maxModuleTurnAccel,
+                       PIDGains teleThetaGains,
+                       PIDGains autoThetaGains,
+                       PIDGains translationGains,
+                       boolean extraTelemetry,
+                       String moduleCanbus,
+                       String gyroCanbus,
+                       SupplyCurrentLimitConfiguration currentLimit,
+                       ModuleInfo... moduleInfos) {
 
         this.extraTelemetry = extraTelemetry;
         this.maxChassisSpeed = maxChassisSpeed;
@@ -150,9 +148,9 @@ public class SwerveDrivetrain extends SubsystemBase {
     }
 
     /**
-     * Should be called periodically if you want the fireld to regularly be updated
+     * Should be called periodically if you want the field to regularly be updated
      */
-    private void updateField2dObject() {
+    protected void updateField2dObject() {
         Pose2d robotPose = getPose();
         field.setRobotPose(robotPose);
 
@@ -169,11 +167,14 @@ public class SwerveDrivetrain extends SubsystemBase {
         SwerveModuleState state = module.getCurrentState();
         Translation2d offset = module.getModuleOffset();
 
-        Pose2d pose = new Pose2d(robotPose.getTranslation().plus(offset), robotPose.getRotation().plus(state.angle));
-
-        return pose;
+        return new Pose2d(robotPose.getTranslation().plus(offset), robotPose.getRotation().plus(state.angle));
     }
 
+    /**
+     * Method to call to update the states of the swerve drivetrain
+     * @param speeds chassis speed object to move
+     * @param allowHoldAngleChange whether the hold angle of the robot should change
+     */
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
         if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
             speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
@@ -210,17 +211,21 @@ public class SwerveDrivetrain extends SubsystemBase {
      * @return Robot angle
      */
     public Rotation2d getCurrentAngle(){
-        double angle = getGyroHeading() - rotationOffset;
-        while (angle < -180){ angle += 360; }
-        while (angle > 180){ angle -= 360; }
-        return Rotation2d.fromDegrees(angle);
+        return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI));
     }
 
     public void stopModules() {
-        modules.forEach((module) -> module.stop());
+        modules.forEach(SwerveModule::stop);
     }
 
-    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, boolean resetPose) {
+    /**
+     * Get a command to run a path-planner trajectory on the swerve drive
+     * @param trajectory the trajectory to run
+     * @param resetPose whether to being the command by resetting the pose of the robot
+     * @param requirements the subsystem you may need
+     * @return the command to run
+     */
+    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, boolean resetPose, Subsystem... requirements) {
         return new SequentialCommandGroup(
             new InstantCommand(() -> {
                 if(extraTelemetry) field.getObject("traj").setTrajectory(trajectory);
@@ -233,14 +238,14 @@ public class SwerveDrivetrain extends SubsystemBase {
             }),
             new PPSwerveControllerCommand(
                 trajectory, this::getPose, kDriveKinematics, 
-                xHoldController, yHoldController, thetaHoldControllerAuto, 
-                (states) -> setModuleStates(states), this)
+                xHoldController, yHoldController, thetaHoldControllerAuto,
+                    this::setModuleStates, requirements)
         );
         
     }
 
-    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory) {
-        return getTrajectoryCommand(trajectory, false);
+    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, Subsystem... requirements) {
+        return getTrajectoryCommand(trajectory, false, requirements);
     }
 
     public Pose2d getPose() {
@@ -249,6 +254,10 @@ public class SwerveDrivetrain extends SubsystemBase {
 
     public double getGyroHeading() {
         return gyro.getYaw();
+    }
+
+    public Rotation2d getHoldAngle() {
+        return holdAngle;
     }
 
     public boolean isFieldRelative() {return fieldRelative;}
