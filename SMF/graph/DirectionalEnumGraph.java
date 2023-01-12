@@ -69,8 +69,8 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
         List<T> incoming = new ArrayList<>();
 
         for (int i = 0; i < adjacencyMap.length; i++) {
-            T out = getAsEdge(i, vertex.ordinal());
-            T in = getAsEdge(vertex.ordinal(), i);
+            T in = getAsEdge(i, vertex.ordinal());
+            T out = getAsEdge(vertex.ordinal(), i);
             if (out != null) outgoing.add(out);
             if (in != null) incoming.add(in);
         }

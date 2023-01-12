@@ -56,6 +56,17 @@ public class DirectionalEnumGraphTesting {
 
         assert graph.getEdges(ExampleState.E, EdgeType.All).size() == 0;
     }
+
+    @Test
+    public void setEdge() {
+        CommandTransition<ExampleState> t1 = new CommandTransition<>(ExampleState.A, ExampleState.B, new InstantCommand());
+        CommandTransition<ExampleState> t2 = new CommandTransition<>(ExampleState.A, ExampleState.B, new InstantCommand());
+
+        graph.addEdge(t1);
+        graph.setEdge(t2);
+
+        assert graph.getEdge(t2.getStartState(), t2.getEndState()) == t2;
+    }
 }
 
 enum ExampleState {
