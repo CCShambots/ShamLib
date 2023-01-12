@@ -4,6 +4,7 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
@@ -11,7 +12,7 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.util.HashSet;
 import java.util.Set;
 
-public abstract class StateMachine<E extends Enum<E>> implements Sendable {
+public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
     private TransitionBase<E> currentTransition;
     private TransitionBase<E> queuedTransition;
@@ -20,7 +21,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private final double transitionTimeOut = 2; //TODO: move to SMFConstants
     private final E undeterminedState;
     private E currentState;
-    private final String name;
 
     public StateMachine(String name, E undeterminedState, Class<E> enumType) {
         this.undeterminedState = undeterminedState;
@@ -28,7 +28,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         currentTransition = null;
         transitionTimer = new Timer();
         currentFlags = new HashSet<>();
-        this.name = name;
+        setName(name);
 
         // *puke*
         transitionGraph = new DirectionalEnumGraph<>(new CommandTransition(undeterminedState, undeterminedState, new InstantCommand()).getClass(), enumType);
@@ -36,10 +36,6 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
 
     public E getState() {
         return currentState;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void addTransition(E start, E end, Command run) {
@@ -127,7 +123,7 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     public String toString() {
-        return "State Machine - " + name + "; In State: " + getState().name() + "; In Transition: " + isTransitioning();
+        return "Stated Subsystem Machine - " + getName() + "; In State: " + getState().name() + "; In Transition: " + isTransitioning();
     }
     abstract void determineState();
 
