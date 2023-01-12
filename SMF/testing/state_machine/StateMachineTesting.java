@@ -12,7 +12,7 @@ public class StateMachineTesting {
 
     @BeforeAll
     public static void setUp() {
-        stateMachine = new ExampleStateMachine("e", ExampleState.A, ExampleState.class);
+        stateMachine = new ExampleStateMachine("x", ExampleState.A, ExampleState.class);
         CommandScheduler.getInstance().enable();
     }
 
@@ -20,6 +20,17 @@ public class StateMachineTesting {
     public static void tearDown() {
         CommandScheduler.getInstance().disable();
         CommandScheduler.getInstance().cancelAll();
+    }
+
+    @Test
+    public void determine() {
+        stateMachine.determineState();
+        assert stateMachine.isDetermined();
+        assert stateMachine.getState() == ExampleState.B;
+    }
+
+    private void stepCommandScheduler() {
+        CommandScheduler.getInstance().run();
     }
 }
 
