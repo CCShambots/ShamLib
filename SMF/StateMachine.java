@@ -126,7 +126,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         update();
     }
 
-    private void setState(E state) {
+    protected void setState(E state) {
         getCurrentCommand().end(true);
         currentState = state;
         clearFlags();
@@ -165,8 +165,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public void determineState() {
         if (!isDetermined()) determineSelf();
     }
-    abstract void update();
-    abstract void determineSelf();
+    protected abstract void update();
+    protected abstract void determineSelf();
 
     //TODO: logging stuff
 }
