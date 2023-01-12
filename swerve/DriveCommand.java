@@ -8,7 +8,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.UnaryOperator;
 
 public class DriveCommand extends CommandBase{
-    private SwerveDrivetrain drivetrain;
+    private SwerveDrive drivetrain;
     private DoubleSupplier xSupplier;
     private DoubleSupplier ySupplier;
     private DoubleSupplier turnSupplier;
@@ -23,7 +23,7 @@ public class DriveCommand extends CommandBase{
 
     private boolean useTurning;
 
-    public DriveCommand(SwerveDrivetrain drivetrain,
+    public DriveCommand(SwerveDrive drivetrain,
                         DoubleSupplier xSupplier,
                         DoubleSupplier ySupplier,
                         DoubleSupplier turnSupplier,
