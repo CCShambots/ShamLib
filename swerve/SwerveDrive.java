@@ -211,7 +211,10 @@ public class SwerveDrive {
      * @return Robot angle
      */
     public Rotation2d getCurrentAngle(){
-        return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI));
+        double angle = getGyroHeading() - rotationOffset;
+        while (angle < -180){ angle += 360; }
+        while (angle > 180){ angle -= 360; }
+        return Rotation2d.fromDegrees(angle);
     }
 
     public void stopModules() {
