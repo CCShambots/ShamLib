@@ -16,10 +16,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
     private TransitionBase<E> currentTransition;
     private TransitionBase<E> queuedTransition;
-    private Timer transitionTimer;
-    private Set<E> currentFlags;
-    private final double transitionTimeOut = 2; //TODO: move this to constants?
-    private E undeterminedState;
+    private final Timer transitionTimer;
+    private final Set<E> currentFlags;
+    private final double transitionTimeOut = 2; //TODO: move to SMFConstants
+    private final E undeterminedState;
     private E currentState;
 
     public StateMachine(E undeterminedState, Class<E> enumType) {
@@ -75,6 +75,15 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         currentFlags.clear();
     }
 
+    public void reset() {
+        if (currentTransition != null) {
+            currentTransition.cancel();
+            currentTransition = null;
+        }
+
+        currentState = undeterminedState;
+    }
+
     public void update() {
         updateTransitioning();
 
@@ -82,6 +91,12 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     }
 
     private void updateTransitioning() {
+        if (currentTransition != null && currentTransition.isFinished()) {
+            currentState = currentTransition.getEndState();
+            currentTransition = null;
+            clearFlags();
+        }
+
         if (queuedTransition != null && (!isTransitioning() || transitionTimer.hasElapsed(transitionTimeOut))) {
             forceChangeTransition();
         }
@@ -101,6 +116,8 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         transitionTimer.reset();
         clearFlags();
     }
+
+    abstract void determineState();
 
     /*
     private DirectionalEnumGraph<StateBase<E>, TransitionBase<E>, E> stateGraph;
