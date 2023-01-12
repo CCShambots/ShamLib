@@ -1,7 +1,9 @@
 package frc.robot.ShamLib.testing;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
+import frc.robot.ShamLib.SMF.graph.EdgeType;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,7 +47,14 @@ public class DirectionalEnumGraphTesting {
             graph.addEdge(t);
         }
 
+        assert graph.getEdges(ExampleState.A, EdgeType.All).size() == 1;
+        assert graph.getEdges(ExampleState.A, EdgeType.Incoming).size() == 0;
 
+        assert graph.getEdges(ExampleState.D, EdgeType.All).size() == 3;
+        assert graph.getEdges(ExampleState.D, EdgeType.Outgoing).size() == 2;
+        assert graph.getEdges(ExampleState.D, EdgeType.Incoming).size() == 1;
+
+        assert graph.getEdges(ExampleState.E, EdgeType.All).size() == 0;
     }
 }
 
