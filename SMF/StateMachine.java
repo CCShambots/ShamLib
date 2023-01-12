@@ -35,7 +35,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         setName(name);
 
         // *puke*
-        transitionGraph = new DirectionalEnumGraph<>(new CommandTransition(undeterminedState, undeterminedState, new InstantCommand()).getClass(), enumType);
+        transitionGraph = new DirectionalEnumGraph<>(enumType);
         enabled = false;
     }
 

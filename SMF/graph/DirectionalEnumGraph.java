@@ -7,16 +7,16 @@ import java.util.*;
 
 public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? extends Enum<V>>> {
     //Array where the index [1][2] = TransitionBase from state at ordinal 1 to state at ordinal 2
-    private final T[][] adjacencyMap;
+    private final Object[][] adjacencyMap;
     private final Class<V> enumType;
 
-    public DirectionalEnumGraph(Class<T> transitionType, Class<V> enumType) {
+    public DirectionalEnumGraph(Class<V> enumType) {
         int c = enumType.getEnumConstants().length;
         this.enumType = enumType;
         
         //TODO: optimize this somehow because it feels messy?
         //My thought is that it's probably fine. You're write that it's a little gross, but I think it's efficient and good - Barta
-        adjacencyMap = (T[][]) Array.newInstance(transitionType, c, c);
+        adjacencyMap = new Object[c][c];
     }
 
     /**
@@ -29,6 +29,10 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
         if (getEdge(fromOrdinal(transition.getStartState().ordinal()), fromOrdinal(transition.getStartState().ordinal())) != null) return;
 
         setEdge(transition);
+    }
+
+    private T getAsEdge(int x, int y) {
+        return (T) adjacencyMap[x][y];
     }
 
     private V fromOrdinal(int ordinal) {
@@ -51,7 +55,7 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
      * @return the edge, if one is found. Otherwise, the method will return null
      */
     public T getEdge(V start, V end) {
-        return adjacencyMap[start.ordinal()][end.ordinal()];
+        return getAsEdge(start.ordinal(), end.ordinal());
     }
 
     /**
@@ -65,8 +69,8 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
         List<T> incoming = new ArrayList<>();
 
         for (int i = 0; i < adjacencyMap.length; i++) {
-            T out = adjacencyMap[i][vertex.ordinal()];
-            T in = adjacencyMap[vertex.ordinal()][i];
+            T out = getAsEdge(i, vertex.ordinal());
+            T in = getAsEdge(vertex.ordinal(), i);
             if (out != null) outgoing.add(out);
             if (in != null) incoming.add(in);
         }
