@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.SMF.testing.state_machine;
 
+import edu.wpi.first.hal.simulation.SimulatorJNI;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.ShamLib.SMF.StateMachine;
@@ -13,13 +14,10 @@ public class StateMachineTesting {
     @BeforeAll
     public static void setUp() {
         stateMachine = new ExampleStateMachine("x", ExampleState.A, ExampleState.class);
-        CommandScheduler.getInstance().enable();
     }
 
     @AfterAll
     public static void tearDown() {
-        CommandScheduler.getInstance().disable();
-        CommandScheduler.getInstance().cancelAll();
     }
 
     @Test
@@ -29,8 +27,8 @@ public class StateMachineTesting {
         assert stateMachine.getState() == ExampleState.B;
     }
 
-    private void stepCommandScheduler() {
-        CommandScheduler.getInstance().run();
+    private void stepSubsystem() {
+        stateMachine.periodic();
     }
 }
 
