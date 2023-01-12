@@ -43,7 +43,7 @@ public class SwerveDrive {
     private final boolean extraTelemetry;
 
     /**
-     * Constructor for your typical swerve drivetarin with odometry compatible with vision pose estimation
+     * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
      * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
      * @param moduleTurnGains PIDF gains for the position of the swerve modules
@@ -222,7 +222,7 @@ public class SwerveDrive {
     }
 
     /**
-     * Get a command to run a pathplanner trajectory on the swerve drive
+     * Get a command to run a path-planner trajectory on the swerve drive
      * @param trajectory the trajectory to run
      * @param resetPose whether to being the command by resetting the pose of the robot
      * @param requirements the subsystem you may need
