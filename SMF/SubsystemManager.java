@@ -63,12 +63,11 @@ public class SubsystemManager {
     }
 
     /**
-     * Enable all subsystems and return the command to determine all subsystems
-     * @return the command that should be run
+     * Enable all subsystems and determine all subsystems
      */
-    public Command prepSubsystems() {
+    public void prepSubsystems() {
         enableAllSubsystems();
-        return determineAllSubsystems();
+        determineAllSubsystems();
     }
 
 }

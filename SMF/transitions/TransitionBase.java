@@ -1,9 +1,5 @@
 package frc.robot.ShamLib.SMF.transitions;
 
-import frc.robot.ShamLib.SMF.states.StateBase;
-
-import java.util.function.BooleanSupplier;
-
 public abstract class TransitionBase<E extends Enum<E>> {
     protected final E startState;
     protected final E endState;

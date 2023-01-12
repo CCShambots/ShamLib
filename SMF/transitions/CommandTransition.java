@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.ShamLib.SMF.states.StateBase;
 
 public class CommandTransition<E extends Enum<E>> extends TransitionBase<E> {
     private Command command;
