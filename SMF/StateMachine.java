@@ -20,16 +20,26 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
     private final double transitionTimeOut = 2; //TODO: move to SMFConstants
     private final E undeterminedState;
     private E currentState;
+    private final String name;
 
-    public StateMachine(E undeterminedState, Class<E> enumType) {
+    public StateMachine(String name, E undeterminedState, Class<E> enumType) {
         this.undeterminedState = undeterminedState;
         currentState = undeterminedState;
         currentTransition = null;
         transitionTimer = new Timer();
         currentFlags = new HashSet<>();
+        this.name = name;
 
         // *puke*
         transitionGraph = new DirectionalEnumGraph<>(new CommandTransition(undeterminedState, undeterminedState, new InstantCommand()).getClass(), enumType);
+    }
+
+    public E getState() {
+        return currentState;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public void addTransition(E start, E end, Command run) {
@@ -116,5 +126,10 @@ public abstract class StateMachine<E extends Enum<E>> implements Sendable {
         clearFlags();
     }
 
+    public String toString() {
+        return "State Machine - " + name + "; In State: " + getState().name() + "; In Transition: " + isTransitioning();
+    }
     abstract void determineState();
+
+    //TODO: logging stuff
 }
