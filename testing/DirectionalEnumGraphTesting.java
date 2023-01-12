@@ -31,12 +31,24 @@ public class DirectionalEnumGraphTesting {
 
         assert graph.getEdge(ExampleState.C, ExampleState.E) == null;
     }
+
+    @Test
+    public void getEdges() {
+        CommandTransition[] transitions = {
+                new CommandTransition<>(ExampleState.A, ExampleState.B, new InstantCommand()),
+                new CommandTransition<>(ExampleState.D, ExampleState.B, new InstantCommand()),
+                new CommandTransition<>(ExampleState.D, ExampleState.C, new InstantCommand()),
+                new CommandTransition<>(ExampleState.C, ExampleState.D, new InstantCommand())
+        };
+
+        for (CommandTransition<ExampleState> t : transitions) {
+            graph.addEdge(t);
+        }
+
+
+    }
 }
 
 enum ExampleState {
-    A,
-    B,
-    C,
-    D,
-    E
+    A, B, C, D, E
 }
