@@ -17,7 +17,19 @@ public class DirectionalEnumGraphTesting {
 
     @Test
     public void addAndGetEdge() {
+        CommandTransition[] transitions = {
+                new CommandTransition<>(ExampleState.A, ExampleState.B, new InstantCommand()),
+                new CommandTransition<>(ExampleState.D, ExampleState.B, new InstantCommand()),
+                new CommandTransition<>(ExampleState.D, ExampleState.C, new InstantCommand()),
+                new CommandTransition<>(ExampleState.C, ExampleState.D, new InstantCommand())
+        };
 
+        for (CommandTransition<ExampleState> t : transitions) {
+            graph.addEdge(t);
+            assert graph.getEdge(t.getStartState(), t.getEndState()) == t;
+        }
+
+        assert graph.getEdge(ExampleState.C, ExampleState.E) == null;
     }
 }
 
