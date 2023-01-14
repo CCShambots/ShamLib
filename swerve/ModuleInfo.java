@@ -12,13 +12,13 @@ public class ModuleInfo {
     final double turnRatio;
     final double driveRatio;
 
-    private double mk4iTurnRatio =
+    private static double mk4iTurnRatio =
         (1.0 / 2048) * //Motor revs
         (7.0 / 150.0) * //Output revs
         360 //Output degrees
     ;
 
-    private double mk4iWheelCircumference =
+    private static double mk4iWheelCircumference =
             2 * Math.PI * 0.0508;
 
     public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset,
@@ -32,7 +32,7 @@ public class ModuleInfo {
         this.driveRatio = driveRatio;
     }
 
-    public ModuleInfo getL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
@@ -41,7 +41,7 @@ public class ModuleInfo {
         );
     }
 
-    public ModuleInfo getL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
@@ -50,7 +50,7 @@ public class ModuleInfo {
         );
     }
 
-    public ModuleInfo getL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs

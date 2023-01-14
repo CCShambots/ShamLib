@@ -3,6 +3,7 @@ package frc.robot.ShamLib.motors;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 
@@ -20,7 +21,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * Constructor for a TalonFX with gear ratio math included
      * @param deviceNumber CAN ID
      * @param canbus name of the canbus (i.e. for CANivore)
-     * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
+     * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units (i.e. degree/tick)
      */
     public EnhancedTalonFX(int deviceNumber, String canbus, double inputToOutputRatio) {
         super(deviceNumber, canbus);
@@ -117,16 +118,32 @@ public class EnhancedTalonFX extends WPI_TalonFX {
         config_kD(idx, gains.kD, kTimeoutMs);
     }
 
-    public Command calculateKF(double power, BooleanSupplier interrupt) {
+    /**
+     * Command to calculate the kF value for a PIDF loop to run on a motor
+     * It will run until the interrupt is triggered, and then print its results to the console
+     * @param power raw power of the motor (0-1)
+     * @param offsetTime time to wait before tracking data (seconds)
+     * @param interrupt the condition to end the command
+     * @return the command to run
+     */
+    public Command calculateKF(double power, double offsetTime, BooleanSupplier interrupt) {
         List<Double> rawVelos = new ArrayList<>();
         List<Double> filteredVelos = new ArrayList<>();
         LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02); //TODO: These values might have to change if they're not useful
+        
+        Timer timer = new Timer();
 
         return new FunctionalCommand(
-                () -> setManualPower(power),
                 () -> {
-                    filteredVelos.add(filter.calculate(getSelectedSensorVelocity()));
-                    rawVelos.add(getSelectedSensorVelocity());
+                    setManualPower(Math.abs(power));
+                    timer.start();
+                },
+                () -> {
+                    if(timer.get() > offsetTime) {
+                        filteredVelos.add(filter.calculate(getSelectedSensorVelocity()));
+                        rawVelos.add(getSelectedSensorVelocity());
+                    }
+                    System.out.println(getSelectedSensorVelocity());
                 },
                 (interrupted) -> {
                     setManualPower(0);
@@ -137,6 +154,10 @@ public class EnhancedTalonFX extends WPI_TalonFX {
                 },
                 () -> interrupt.getAsBoolean()
         );
+    }
+
+    public Command calculateKF(double power, BooleanSupplier interrupt) {
+        return calculateKF(power, 1, interrupt);
     }
 }
 

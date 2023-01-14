@@ -1,6 +1,9 @@
 package frc.robot.ShamLib.swerve;
 
+import java.util.function.BooleanSupplier;
+
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -11,6 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.ShamLib.motors.MotionMagicTalonFX;
 import frc.robot.ShamLib.motors.PIDFGains;
 import frc.robot.ShamLib.motors.VelocityTalonFX;
@@ -62,14 +66,12 @@ public class SwerveModule implements Sendable{
         turnMotor = new MotionMagicTalonFX(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(true); //All turn modules were inverted
         turnMotor.configNeutralDeadband(0.01);
-        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+        turnMotor.resetPosition(-normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
         turnMotor.configSupplyCurrentLimit(currentLimit);
 
         driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);
         driveMotor.configFactoryDefault();
 
-        driveMotor.setSensorPhase(false);
-        driveMotor.configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, 30);
         driveMotor.configSupplyCurrentLimit(currentLimit);
 
         setDesiredState(
@@ -95,7 +97,7 @@ public class SwerveModule implements Sendable{
     }
 
     private double normalizeDegrees(double degrees) {
-        return Math.IEEEremainder(degrees, 180);
+        return Math.IEEEremainder(degrees, 360);
     }
 
     public void setDesiredState(SwerveModuleState state) {
@@ -106,12 +108,12 @@ public class SwerveModule implements Sendable{
 
         turnMotor.setTarget(targetModuleAngle);
 
-        driveMotor.setTarget(targetState.speedMetersPerSecond);
-
+        // driveMotor.setTarget(targetState.speedMetersPerSecond);
+        driveMotor.set(TalonFXControlMode.Velocity, 2048);
     }
 
     public Rotation2d getTurnAngle(){
-        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getSelectedSensorPosition()));
+        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getPosition()));
     }
 
     public double getDriveMotorRate(){
@@ -140,18 +142,27 @@ public class SwerveModule implements Sendable{
         return moduleName;
     }
 
+    public Command calculateTurnKf(BooleanSupplier interrupt) {
+        return driveMotor.calculateKF(1, interrupt);
+    }
+
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("Swerve Module");
 
         builder.addDoubleProperty("Angle", () -> getTurnAngle().getDegrees(), null);
-        builder.addDoubleProperty("Raw Angle", () -> turnMotor.getSelectedSensorPosition(), null);
-        builder.addDoubleProperty("Raw Setpoint", () -> turnMotor.getClosedLoopTarget(0), null);
-        builder.addDoubleProperty("Absolute Angle", () -> turnEncoder.getAbsolutePosition(), null);
+        builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset), null);
+        // builder.addDoubleProperty("Degree Angle (motor)", () -> turnMotor.getPosition(), null);
+        // builder.addDoubleProperty("Raw Angle (motor)", () -> turnMotor.getSelectedSensorPosition(), null);
+        builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getClosedLoopTarget(0), null);
+        builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getPosition()), null);
+        // builder.addDoubleProperty("Absolute Angle", () -> turnEncoder.getAbsolutePosition(), null);
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
         builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
         builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);
-        builder.addDoubleProperty("Encoder offset", () -> encoderOffset, null);
+        builder.addDoubleProperty("Velo error", () -> Math.abs(driveMotor.getTarget() - driveMotor.getVelocity()), null);
+
+        // builder.addDoubleProperty("Encoder offset", () -> encoderOffset, null);
     }
     
 }

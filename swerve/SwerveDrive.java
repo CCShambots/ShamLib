@@ -21,6 +21,7 @@ import frc.robot.ShamLib.PIDGains;
 import frc.robot.ShamLib.motors.PIDFGains;
 
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.ArrayList;
 
 
@@ -39,7 +40,7 @@ public class SwerveDrive {
 
     private boolean fieldRelative = true;
 
-    protected Field2d field;
+    private Field2d field;
     private final boolean extraTelemetry;
 
     /**
@@ -150,7 +151,7 @@ public class SwerveDrive {
     /**
      * Should be called periodically if you want the field to regularly be updated
      */
-    protected void updateField2dObject() {
+    public void updateField2dObject() {
         Pose2d robotPose = getPose();
         field.setRobotPose(robotPose);
 
@@ -285,5 +286,16 @@ public class SwerveDrive {
     }
 
     public void resetOdometryPose() {resetOdometryPose(new Pose2d());}
-    
+
+    public Field2d getField() {
+        return field;
+    }
+
+    public List<SwerveModule> getModules() {
+        return modules;
+    }
+
+    public Command calculateKF(BooleanSupplier interrupt) {
+        return modules.get(0).calculateTurnKf(interrupt);
+    }
 }
