@@ -4,14 +4,13 @@ import java.io.IOException;
 import java.util.List;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Pair;
-import edu.wpi.first.wpilibj.Filesystem;
 import org.photonvision.PhotonCamera;
 import org.photonvision.RobotPoseEstimator;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.wpilibj.Filesystem;
 
 public class PhotonVisionInstance {
     private Transform3d cameraToRobotPose;
@@ -27,10 +26,14 @@ public class PhotonVisionInstance {
         this.camera = new PhotonCamera(camName);
 
         this.poseEstimator = new RobotPoseEstimator(
-                new AprilTagFieldLayout(AprilTagFields.),
+                new AprilTagFieldLayout(Filesystem.getDeployDirectory() + "/2023-chargedup.json"),
                 RobotPoseEstimator.PoseStrategy.CLOSEST_TO_REFERENCE_POSE, //TODO: Which of these is actually best?
                 List.of(new Pair<>(camera, cameraToRobotPose))
         );
+    }
+
+    public boolean hasTarget() {
+        return camera.getLatestResult().hasTargets();
     }
 
     public void update(Pose3d referencePose) {
