@@ -212,7 +212,7 @@ public class SwerveDrive {
      * @return Robot angle
      */
     public Rotation2d getCurrentAngle(){
-        return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI));
+        return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI * 2));
     }
 
     public void stopModules() {

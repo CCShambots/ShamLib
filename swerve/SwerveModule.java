@@ -69,8 +69,7 @@ public class SwerveModule implements Sendable{
         turnMotor.resetPosition(-normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
         turnMotor.configSupplyCurrentLimit(currentLimit);
 
-        driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);
-        driveMotor.configFactoryDefault();
+        driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);        
 
         driveMotor.configSupplyCurrentLimit(currentLimit);
 
@@ -108,8 +107,7 @@ public class SwerveModule implements Sendable{
 
         turnMotor.setTarget(targetModuleAngle);
 
-        // driveMotor.setTarget(targetState.speedMetersPerSecond);
-        driveMotor.set(TalonFXControlMode.Velocity, 2048);
+        driveMotor.setTarget(targetState.speedMetersPerSecond);
     }
 
     public Rotation2d getTurnAngle(){

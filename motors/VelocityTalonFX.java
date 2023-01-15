@@ -20,9 +20,9 @@ public class VelocityTalonFX extends EnhancedTalonFX {
     public VelocityTalonFX(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio) {
         super(deviceNumber, canbus, inputToOutputRatio);
 
-        setSensorPhase(false);
-
         configFactoryDefault();
+
+        setSensorPhase(false);
         configSelectedFeedbackSensor(TalonFXFeedbackDevice.IntegratedSensor, 0, kTimeoutMs);
 
         setStatusFramePeriod(StatusFrameEnhanced.Status_13_Base_PIDF0, 10, kTimeoutMs);
