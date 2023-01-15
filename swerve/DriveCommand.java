@@ -3,6 +3,7 @@ package frc.robot.ShamLib.swerve;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.UnaryOperator;
@@ -33,7 +34,8 @@ public class DriveCommand extends CommandBase{
                         double maxRotAccel,
                         double deadband,
                         UnaryOperator<Double> controllerConversion,
-                        boolean useTurning
+                        boolean useTurning,
+                        Subsystem subsystem
     ) {
         this.drivetrain = drivetrain;
         this.xSupplier = xSupplier;
@@ -51,7 +53,7 @@ public class DriveCommand extends CommandBase{
 
         this.useTurning = useTurning;
 
-        addRequirements(drivetrain);
+        addRequirements(subsystem);
     }
 
     @Override
