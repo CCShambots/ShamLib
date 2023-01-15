@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.wpilibj.Filesystem;
 import org.photonvision.PhotonCamera;
@@ -26,7 +27,7 @@ public class PhotonVisionInstance {
         this.camera = new PhotonCamera(camName);
 
         this.poseEstimator = new RobotPoseEstimator(
-                new AprilTagFieldLayout(Filesystem.getDeployDirectory().toPath().resolve("2023-chargedup.json")),
+                new AprilTagFieldLayout(AprilTagFields.),
                 RobotPoseEstimator.PoseStrategy.CLOSEST_TO_REFERENCE_POSE, //TODO: Which of these is actually best?
                 List.of(new Pair<>(camera, cameraToRobotPose))
         );
