@@ -13,7 +13,7 @@ public class ThroughBoreEncoder {
     }
 
     public double getRaw() {
-        return Math.IEEEremainder(cycle.getOutput(), 0.5); //TODO: I would really like to know if IEEERemainder works like I think it does too
+        return Math.IEEEremainder(cycle.getOutput(), 1);
     }
 
     public double getDegrees() {
