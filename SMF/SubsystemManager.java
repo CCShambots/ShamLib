@@ -1,12 +1,8 @@
 package frc.robot.ShamLib.SMF;
 
-import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 public class SubsystemManager {
     private final List<StateMachine<?>> subsystems = new ArrayList<>();
@@ -21,7 +17,12 @@ public class SubsystemManager {
     public void registerSubsystem(StateMachine<?> subsystem) {
         if(!subsystems.contains(subsystem)) {
             subsystems.add(subsystem);
+            sendOnNt(subsystem);
         }
+    }
+
+    private void sendOnNt(StateMachine<?> subsystem) {
+        SmartDashboard.putData(subsystem.getName(), subsystem);
     }
 
     /**
