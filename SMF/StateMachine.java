@@ -26,8 +26,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private final E undeterminedState;
     private E currentState;
     private boolean enabled;
+    private Class<E> enumType;
 
     public StateMachine(String name, E undeterminedState, Class<E> enumType) {
+        this.enumType = enumType;
+
         this.undeterminedState = undeterminedState;
         currentState = undeterminedState;
         currentTransition = null;
@@ -76,6 +79,12 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
     public void addTransition(E start, E end, Command run) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run));
+    }
+
+    public void addOmniTransition(E state, Command run) {
+        for (E s : enumType.getEnumConstants()) {
+            addTransition(state, s, run);
+        }
     }
 
     public void addCommutativeTransition(E start, E end, Command run) {
