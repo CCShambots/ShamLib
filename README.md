@@ -15,7 +15,7 @@ Open your WPILib project in the command line and cd into a util package with the
 
 ## Unit Testing
 
-To run unit tests in a robot project from the shamlib tests, add the following to yoru build.gradle: 
+To run unit tests in a robot project from the shamlib tests, add the following to your build.gradle: 
 ```
 task testShamLib(type:Exec) {
 workingDir 'src/main/java/frc/robot/ShamLib/test'
@@ -32,6 +32,8 @@ test.mustRunAfter(testShamLib)
 deleteShamLibTests.mustRunAfter(test)
 }
 ```
+
+Perform a gradle sync
 
 Then create the following gradle task:
 ![img.png](test gradle task.png)
