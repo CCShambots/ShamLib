@@ -83,7 +83,9 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
     public void addOmniTransition(E state, Command run) {
         for (E s : enumType.getEnumConstants()) {
-            addTransition(state, s, run);
+            if(s != state) {
+                addTransition(s, state, run);
+            }
         }
     }
 
