@@ -2,6 +2,7 @@ package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
 import com.pathplanner.lib.commands.PPSwerveControllerCommand;
@@ -30,12 +31,13 @@ public class SwerveDrive {
     protected final List<SwerveModule> modules;
     protected final SwerveDriveKinematics kDriveKinematics;
     protected final double maxChassisSpeed;
+    protected final double maxChassisAccel;
     private int numModules = 0;
     private final WPI_Pigeon2 gyro;
     private double rotationOffset;
     private Rotation2d holdAngle;
 
-    protected final PIDController thetaHoldControllerTele, thetaHoldControllerAuto, xHoldController, yHoldController;
+    private final PIDController thetaHoldControllerTele, thetaHoldControllerAuto, xHoldController, yHoldController;
     private final SwerveDrivePoseEstimator odometry;
 
     private boolean fieldRelative = true;
@@ -48,6 +50,8 @@ public class SwerveDrive {
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
      * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
      * @param moduleTurnGains PIDF gains for the position of the swerve modules
+     * @param maxChassisSpeed maximum chassis speed
+     * @param maxAcceleration maximum chassis acceleration
      * @param maxModuleTurnVelo maximum velocity the turn motors should go
      * @param maxModuleTurnAccel maximum acceleration the turn motors should go
      * @param teleThetaGains PID gains for the angle hold controller in teleop
@@ -62,6 +66,7 @@ public class SwerveDrive {
                        PIDFGains moduleDriveGains,
                        PIDFGains moduleTurnGains,
                        double maxChassisSpeed,
+                       double maxAcceleration,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,
                        PIDGains teleThetaGains,
@@ -75,6 +80,7 @@ public class SwerveDrive {
 
         this.extraTelemetry = extraTelemetry;
         this.maxChassisSpeed = maxChassisSpeed;
+        this.maxChassisAccel = maxAcceleration;
 
         //Apply the gains passed in the constructors
         thetaHoldControllerTele =  teleThetaGains.applyToController();
@@ -215,8 +221,35 @@ public class SwerveDrive {
         return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI * 2));
     }
 
+    public double getChassisSpeed() {
+        ChassisSpeeds speeds = kDriveKinematics.toChassisSpeeds(getModuleStates());
+
+        return Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    }
+
+    public Rotation2d getDirectionOfMovement() {
+        ChassisSpeeds speeds = kDriveKinematics.toChassisSpeeds(getModuleStates());
+        return new Rotation2d(Math.atan2(speeds.vyMetersPerSecond, speeds.vxMetersPerSecond));
+    }
+
     public void stopModules() {
         modules.forEach(SwerveModule::stop);
+    }
+
+    public PIDController getThetaHoldControllerTele() {
+        return thetaHoldControllerTele;
+    }
+
+    public PIDController getThetaHoldControllerAuto() {
+        return thetaHoldControllerAuto;
+    }
+
+    public PIDController getxHoldController() {
+        return xHoldController;
+    }
+
+    public PIDController getyHoldController() {
+        return yHoldController;
     }
 
     /**
@@ -243,6 +276,25 @@ public class SwerveDrive {
                     this::setModuleStates, requirements)
         );
         
+    }
+
+    public Command runTrajectoryWithEndTracking(PathPlannerTrajectory trajectory, boolean resetPose, Subsystem... requirements) {
+        return new SequentialCommandGroup(
+            getTrajectoryCommand(trajectory, resetPose, requirements),
+            new InstantCommand(() -> setHoldAngle(trajectory.getEndState().poseMeters.getRotation()))
+            // new FunctionalCommand(() -> {}, () -> {
+            //     drive(null, resetPose);
+            // }, (interrupted) -> {}, () -> timer.get() > 0.5)
+        );
+
+    }
+
+    public TrajectoryBuilder buildTrajectory(PathConstraints constraints) {
+        return new TrajectoryBuilder(getPose(), kDriveKinematics.toChassisSpeeds(getModuleStates()), constraints);
+    }
+
+    public TrajectoryBuilder buildTrajectory() {
+        return buildTrajectory(new PathConstraints(this.maxChassisSpeed, this.maxChassisAccel));
     }
 
     public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, Subsystem... requirements) {
