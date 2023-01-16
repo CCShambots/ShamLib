@@ -35,3 +35,5 @@ deleteShamLibTests.mustRunAfter(test)
 
 Then create the following gradle task:
 ![img.png](test gradle task.png)
+
+Place all your tests in /Shamlib/test/
