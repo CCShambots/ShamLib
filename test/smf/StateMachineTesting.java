@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.SMF.testing.smf;
+package frc.robot.ShamLib.test.smf;
 
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
