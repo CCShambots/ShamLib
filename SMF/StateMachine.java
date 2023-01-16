@@ -55,11 +55,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
     public void disable() {
         enabled = false;
-        currentTransition.cancel();
+        if (currentTransition != null) currentTransition.cancel();
         currentTransition = null;
         queuedTransition = null;
         setState(undeterminedState);
-        getCurrentCommand().cancel();
+        if (getCurrentCommand() != null) getCurrentCommand().cancel();
 
         onDisable();
     }
@@ -102,9 +102,12 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      */
     public void requestTransition(E state) {
         TransitionBase<E> transition = transitionGraph.getEdge(currentState, state);
-        if(!isTransitioning()) {
+        if(!isTransitioning() && transition != null) {
             currentTransition = transition;
             transition.execute();
+            transitionTimer.start();
+
+            updateTransitioning();
         } else {
             queuedTransition = transition;
         }
@@ -112,9 +115,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     public void requestTransition(E state, Command command) {
-        requestTransition(state);
-
         stateCommands.put(state, command);
+        requestTransition(state);
     }
 
     public Command transitionCommand(E state) {
@@ -158,16 +160,20 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     protected void setState(E state) {
-        getCurrentCommand().cancel();
+        if (getCurrentCommand() != null) getCurrentCommand().cancel();
         currentState = state;
         clearFlags();
-        if (stateCommands.containsKey(state)) stateCommands.get(state).schedule();
+        if (stateCommands.containsKey(state)) {
+            stateCommands.get(state).schedule();
+        }
     }
 
     private void updateTransitioning() {
         if (isTransitioning() && currentTransition.isFinished()) {
             setState(currentTransition.getEndState());
             currentTransition = null;
+            transitionTimer.stop();
+            transitionTimer.reset();
         }
 
         if (queuedTransition != null && (!isTransitioning() || transitionTimer.hasElapsed(transitionTimeOut))) {

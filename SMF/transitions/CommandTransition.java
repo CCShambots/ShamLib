@@ -10,6 +10,7 @@ public class CommandTransition<E extends Enum<E>> extends TransitionBase<E> {
 
     public CommandTransition(E startState, E endState, Command command) {
         super(startState, endState);
+        this.command = command;
     }
 
     @Override
