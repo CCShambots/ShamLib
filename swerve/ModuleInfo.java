@@ -14,7 +14,7 @@ public class ModuleInfo {
 
     private static double mk3TurnRatio  =
             (1.0 / 2048) *
-            (1.0 / 12.8) *
+            (1.0 / 12.8) * //
             360
     ;
 
