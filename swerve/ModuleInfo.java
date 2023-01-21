@@ -12,6 +12,12 @@ public class ModuleInfo {
     final double turnRatio;
     final double driveRatio;
 
+    private static double mk3TurnRatio  =
+            (1.0 / 2048) *
+            (1.0 / 12.8) *
+            360
+    ;
+
     private static double mk4iTurnRatio =
         (1.0 / 2048) * //Motor revs
         (7.0 / 150.0) * //Output revs
@@ -32,7 +38,16 @@ public class ModuleInfo {
         this.driveRatio = driveRatio;
     }
 
-    public static ModuleInfo getL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getMK3L1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
+                mk3TurnRatio,
+                (1.0 / 2048) *
+                (1.0 / 8.16) *
+                mk4iWheelCircumference
+        );
+    }
+
+    public static ModuleInfo getMK4IL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
@@ -41,7 +56,7 @@ public class ModuleInfo {
         );
     }
 
-    public static ModuleInfo getL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getMK4IL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
@@ -50,7 +65,7 @@ public class ModuleInfo {
         );
     }
 
-    public static ModuleInfo getL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
+    public static ModuleInfo getMK4IL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
