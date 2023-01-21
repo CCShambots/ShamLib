@@ -164,6 +164,16 @@ public class SwerveDrive {
 
     }
 
+    public double[] getModuleAbsoluteAngles() {
+        double[] out = new double[4];
+
+        for (int i = 0; i < modules.size(); i++) {
+            out[i] = modules.get(i).getAbsoluteAngle();
+        }
+
+        return out;
+    }
+
     private Pose2d calculateModulePose(SwerveModule module, Pose2d robotPose) {
         SwerveModuleState state = module.getCurrentState();
         Translation2d offset = module.getModuleOffset();

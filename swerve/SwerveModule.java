@@ -95,6 +95,10 @@ public class SwerveModule implements Sendable{
         this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit);
     }
 
+    public double getAbsoluteAngle() {
+        return turnEncoder.getAbsolutePosition();
+    }
+
     private double normalizeDegrees(double degrees) {
         return Math.IEEEremainder(degrees, 360);
     }
