@@ -48,7 +48,9 @@ public class SwerveModule implements Sendable{
                         double maxTurnAccel,
                         double turnRatio,
                         double driveRatio,
-                        SupplyCurrentLimitConfiguration currentLimit
+                        SupplyCurrentLimitConfiguration currentLimit,
+                        boolean driveInverted,
+                        boolean turnInverted
     ) {
         this.moduleOffset = moduleOffset;
         
@@ -64,12 +66,13 @@ public class SwerveModule implements Sendable{
         this.encoderOffset = encoderOffset;
 
         turnMotor = new MotionMagicTalonFX(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
-        turnMotor.setInverted(true); //All turn modules were inverted
+        turnMotor.setInverted(turnInverted); //All turn modules were inverted
         turnMotor.configNeutralDeadband(0.01);
         turnMotor.resetPosition(-normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
         turnMotor.configSupplyCurrentLimit(currentLimit);
 
-        driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);        
+        driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);
+        driveMotor.setInverted(driveInverted);
 
         driveMotor.configSupplyCurrentLimit(currentLimit);
 
@@ -90,9 +93,11 @@ public class SwerveModule implements Sendable{
                         double maxTurnAccel,
                         double turnRatio,
                         double driveRatio,
-                        SupplyCurrentLimitConfiguration currentLimit
+                        SupplyCurrentLimitConfiguration currentLimit,
+                        boolean driveInverted,
+                        boolean turnInverted
     ) {
-        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit);
+        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted);
     }
 
     public double getAbsoluteAngle() {
