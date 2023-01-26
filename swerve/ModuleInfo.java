@@ -53,36 +53,36 @@ public class ModuleInfo {
         );
     }
 
-    public static ModuleInfo getMK4IL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted, boolean turnInverted) {
+    public static ModuleInfo getMK4IL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
                 (1.0 / 8.14) * //Output revs
                 mk4iWheelCircumference, //Output meters
                 driveInverted,
-                turnInverted
+                true
         );
     }
 
-    public static ModuleInfo getMK4IL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted, boolean turnInverted) {
+    public static ModuleInfo getMK4IL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
                 (1.0 / 6.75) * //Output revs
                 mk4iWheelCircumference, //Output meters
                 driveInverted,
-                turnInverted
+                true
         );
     }
 
-    public static ModuleInfo getMK4IL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted, boolean turnInverted) {
+    public static ModuleInfo getMK4IL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
                 mk4iTurnRatio,
                 (1.0 / 2048) * //Motor revs
                 (1.0 / 6.12) * //Output revs
                 mk4iWheelCircumference, //Output meters
                 driveInverted,
-                turnInverted
+                true
         );
     }
 }
