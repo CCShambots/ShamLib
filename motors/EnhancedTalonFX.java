@@ -47,6 +47,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
         return ticksToOutput(getSelectedSensorPosition());
     }
 
+
     /**
      * Get the velocity of the motor (in output units / second)
      * @return output units / sec
@@ -158,6 +159,10 @@ public class EnhancedTalonFX extends WPI_TalonFX {
 
     public Command calculateKF(double power, BooleanSupplier interrupt) {
         return calculateKF(power, 1, interrupt);
+    }
+
+    public Command calculateKF(double power) {
+        return calculateKF(power, 1, () -> false);
     }
 }
 
