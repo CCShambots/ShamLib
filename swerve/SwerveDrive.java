@@ -93,7 +93,7 @@ public class SwerveDrive {
             offsets[i] = m.offset;
 
             modules.add(new SwerveModule("Module-" + numModules, moduleCanbus, m.turnMotorID, m.driveMotorID,
-                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit));
+                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted));
         }
 
         gyro.configFactoryDefault();
@@ -162,6 +162,16 @@ public class SwerveDrive {
             }
         }
 
+    }
+
+    public double[] getModuleAbsoluteAngles() {
+        double[] out = new double[4];
+
+        for (int i = 0; i < modules.size(); i++) {
+            out[i] = modules.get(i).getAbsoluteAngle();
+        }
+
+        return out;
     }
 
     private Pose2d calculateModulePose(SwerveModule module, Pose2d robotPose) {
