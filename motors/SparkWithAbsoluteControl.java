@@ -12,6 +12,8 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
     private AbsoluteEncoder absoluteEncoder;
     private double encoderOffset;
     private double inputToOutputRatio;
+    private SparkMaxPIDController controller;
+    private double target = 0;
 
     /**
      * Create a new object to control a SPARK MAX motor Controller
@@ -23,7 +25,7 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
      * @param gains the PIDF gains to apply to the motor's absolute position control
      * @param encoderOffset the offset of the absolute encoder from the desired zero position (in radians)
      * @param inputToOutputRatio the gear ratio of the motor, such that multiplying position of the relative encoder
-     *                           (in radians) to output radians
+     *                           (in rotation) to output units
      */
     public SparkWithAbsoluteControl(int deviceId, MotorType type, SmartMotionValues gains, double encoderOffset, double inputToOutputRatio) {
         super(deviceId, type);
@@ -33,9 +35,10 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         absoluteEncoder = getAbsoluteEncoder(kDutyCycle);
         this.encoderOffset = encoderOffset;
 
-        syncRelativePosition();
+        absoluteEncoder.setPositionConversionFactor(inputToOutputRatio);
+        absoluteEncoder.setZeroOffset(encoderOffset);
 
-        SparkMaxPIDController controller = getPIDController();
+        controller = getPIDController();
 
         controller.setFeedbackDevice(absoluteEncoder);
         controller.setP(gains.kP);
@@ -43,32 +46,26 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         controller.setD(gains.kD);
         controller.setIZone(gains.kIZone);
 
-
-        controller.setSmartMotionAllowedClosedLoopError()
+        int smartMotionSlot = 0;
+        controller.setSmartMotionMaxVelocity(gains.maxVel, smartMotionSlot);
+        controller.setSmartMotionMinOutputVelocity(gains.minVel, smartMotionSlot);
+        controller.setSmartMotionMaxAccel(gains.maxAcc, smartMotionSlot);
+        controller.setSmartMotionAllowedClosedLoopError(gains.allowedError, smartMotionSlot);
     }
 
-    /**
-     * Get the position of the absolute encoder
-     * @return encoder pos (radians)
-     */
-    public double getAbsolutePosition() {
-        return Math.IEEEremainder(absoluteEncoder.getPosition() * 2 * PI - encoderOffset, 2 * PI);
+    public void setTarget(double target) {
+        this.target = target;
+        controller.setReference(target, ControlType.kSmartMotion);
     }
 
-    public double getRelativeEncoderPosition() {
-        return getEncoder().getPosition() * 2 * PI * inputToOutputRatio;
+    public double getTarget() {
+        return target;
     }
 
-    public void setRelativeEncoderPosition(double outputRadians) {
-        getEncoder().setPosition((outputRadians / inputToOutputRatio) / (2*PI));
+    public double getPosition() {
+        return absoluteEncoder.getPosition();
     }
 
-    /**
-     * Syncs the relative encoder position to the position of the absolute encoder
-     */
-    public void syncRelativePosition() {
-        setRelativeEncoderPosition(getAbsolutePosition());
-    }
 
 
 }
