@@ -1,10 +1,11 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.v5;
 
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
+import frc.robot.ShamLib.motors.PIDFGains;
 
-public class MotionMagicTalonFX extends EnhancedTalonFX{
+public class MotionMagicTalonFXV5 extends EnhancedTalonFXV5 {
     private int kTimeoutMs = 30;
 
     private double target; //In output units
@@ -18,7 +19,7 @@ public class MotionMagicTalonFX extends EnhancedTalonFX{
      * @param maxVel maximum velocity the motor should reach
      * @param maxAccel maximum acceleration the motor should undergo
      */
-    public MotionMagicTalonFX(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
+    public MotionMagicTalonFXV5(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
         super(deviceNumber, canbus, inputToOutputRatio);
 
         configFactoryDefault();
@@ -47,7 +48,7 @@ public class MotionMagicTalonFX extends EnhancedTalonFX{
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public MotionMagicTalonFX(int deviceNumber, PIDFGains gains, double inputToOutputRatio) {
+    public MotionMagicTalonFXV5(int deviceNumber, PIDFGains gains, double inputToOutputRatio) {
         this(deviceNumber, "", gains, inputToOutputRatio, 0, 0);
     }
 
@@ -59,7 +60,7 @@ public class MotionMagicTalonFX extends EnhancedTalonFX{
      * @param maxVel maximum velocity the motor should reach
      * @param maxAccel maximum acceleration the motor should underg
      */
-    public MotionMagicTalonFX(int deviceNumber, PIDFGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
+    public MotionMagicTalonFXV5(int deviceNumber, PIDFGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
         this(deviceNumber, "", gains, inputToOutputRatio, maxVel, maxAccel);
     }
 
@@ -70,7 +71,7 @@ public class MotionMagicTalonFX extends EnhancedTalonFX{
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public MotionMagicTalonFX(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio) {
+    public MotionMagicTalonFXV5(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio) {
         this(deviceNumber, canbus, gains, inputToOutputRatio, 0, 0);
     }
 

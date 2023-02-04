@@ -1,17 +1,22 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.pro;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import com.ctre.phoenixpro.configs.Slot0Configs;
+import com.ctre.phoenixpro.configs.TalonFXConfiguration;
+import com.ctre.phoenixpro.hardware.TalonFX;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.ShamLib.motors.PIDSVGains;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
-public class EnhancedTalonFX extends WPI_TalonFX {
+public class EnhancedTalonFXPro extends TalonFX {
     private int kTimeoutMs = 30;
 
     private double inputToOutputRatio;
@@ -21,9 +26,9 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * Constructor for a TalonFX with gear ratio math included
      * @param deviceNumber CAN ID
      * @param canbus name of the canbus (i.e. for CANivore)
-     * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units (i.e. degree/tick)
+     * @param inputToOutputRatio number to multiply TalonFX rotations by to get output units (i.e. degree/tick)
      */
-    public EnhancedTalonFX(int deviceNumber, String canbus, double inputToOutputRatio) {
+    public EnhancedTalonFXPro(int deviceNumber, String canbus, double inputToOutputRatio) {
         super(deviceNumber, canbus);
 
         this.inputToOutputRatio = inputToOutputRatio;
@@ -35,7 +40,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * @param deviceNumber CAN ID
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public EnhancedTalonFX(int deviceNumber,double inputToOutputRatio) {
+    public EnhancedTalonFXPro(int deviceNumber, double inputToOutputRatio) {
         this(deviceNumber, "", inputToOutputRatio);
     }
 
@@ -43,8 +48,8 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * Get the position of the encoder (in output units)
      * @return output units
      */
-    public double getPosition() {
-        return ticksToOutput(getSelectedSensorPosition());
+    public double getEncoderPosition() {
+        return ticksToOutput(getPosition().getValue());
     }
 
 
@@ -52,8 +57,8 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * Get the velocity of the motor (in output units / second)
      * @return output units / sec
      */
-    public double getVelocity() {
-        return ticksToOutput(getSelectedSensorVelocity()) * 10;
+    public double getEncoderVelocity() {
+        return ticksToOutput(getRotorVelocity().getValue());
     }
 
 
@@ -62,7 +67,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * @param power decimal from -1 to 1 to set the motor's pwoer to
      */
     public void setManualPower(double power) {
-        set(ControlMode.PercentOutput, power);
+        set(power);
     }
 
     /**
@@ -84,39 +89,33 @@ public class EnhancedTalonFX extends WPI_TalonFX {
     }
 
     /**
-     * Returns the target of the motor in native encoder ticks
-     * @return encoder ticks
-     */
-    public double getTicksTarget() {
-        return getClosedLoopTarget();
-    }
-
-    /**
      * @param pos The position (in output units) to which the motor should be reset
      */
     public void resetPosition(double pos) {
-        setSelectedSensorPosition(outputToTicks(pos));
+        setRotorPosition(outputToTicks(pos));
     }
 
     /**
      * Resets the motor back to zero
      */
     public void resetPosition() {
-        setSelectedSensorPosition(0);
+        resetPosition(0);
     }
 
     /**
      * Configure the motors PIDF loop for motion magic
-     * @param idx id slot of the PID
      * @param gains PIDF gains
      */
-    public void configurePIDLoop(int idx, PIDFGains gains) {
+    public Slot0Configs configurePIDLoop(PIDSVGains gains) {
         //Set the motion magic gains in slot0
-        selectProfileSlot(idx, 0);
-        config_kF(idx, gains.kF, kTimeoutMs);
-        config_kP(idx, gains.kP, kTimeoutMs);
-        config_kI(idx, gains.kI, kTimeoutMs);
-        config_kD(idx, gains.kD, kTimeoutMs);
+        Slot0Configs pidConfigs = new Slot0Configs();
+        pidConfigs.kS = gains.kS;
+        pidConfigs.kV = gains.kV;
+        pidConfigs.kP = gains.kP;
+        pidConfigs.kI = gains.kI;
+        pidConfigs.kD = gains.kD;
+
+        return pidConfigs;
     }
 
     /**
@@ -127,10 +126,10 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * @param interrupt the condition to end the command
      * @return the command to run
      */
-    public Command calculateKF(double power, double offsetTime, BooleanSupplier interrupt) {
+    public Command calculateKV(double power, double offsetTime, BooleanSupplier interrupt) {
         List<Double> rawVelos = new ArrayList<>();
         List<Double> filteredVelos = new ArrayList<>();
-        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02); //TODO: These values might have to change if they're not useful
+        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02);
         
         Timer timer = new Timer();
 
@@ -141,10 +140,9 @@ public class EnhancedTalonFX extends WPI_TalonFX {
                 },
                 () -> {
                     if(timer.get() > offsetTime) {
-                        filteredVelos.add(filter.calculate(getSelectedSensorVelocity()));
-                        rawVelos.add(getSelectedSensorVelocity());
+                        filteredVelos.add(filter.calculate(getVelocity().getValue()));
+                        rawVelos.add(getVelocity().getValue());
                     }
-                    System.out.println(getSelectedSensorVelocity());
                 },
                 (interrupted) -> {
                     setManualPower(0);
@@ -157,12 +155,33 @@ public class EnhancedTalonFX extends WPI_TalonFX {
         );
     }
 
-    public Command calculateKF(double power, BooleanSupplier interrupt) {
-        return calculateKF(power, 1, interrupt);
+    public Command calculateKV(double power, BooleanSupplier interrupt) {
+        return calculateKV(power, 1, interrupt);
     }
 
-    public Command calculateKF(double power) {
-        return calculateKF(power, 1, () -> false);
+    public Command calculateKV(double power) {
+        return calculateKV(power, 1, () -> false);
+    }
+
+    public Command calculateKS(Trigger incrementPower, double voltageIncrement, BooleanSupplier interrupt) {
+        AtomicReference<Double> volts = new AtomicReference<>((double) 0);
+
+        incrementPower.onTrue(new InstantCommand(() -> volts.set(volts.get() + voltageIncrement)));
+
+        return new FunctionalCommand(
+            () -> {
+
+            },
+            () -> setVoltage(volts.get()),
+            (interrupted) -> {
+
+            },
+            () -> getEncoderVelocity() > (1.0/60.0)
+        );
+    }
+
+    public Command calculateKS(Trigger incrementPower, double voltageIncrement) {
+        return calculateKS(incrementPower, voltageIncrement, () -> false);
     }
 }
 
