@@ -8,14 +8,19 @@ import static java.lang.Math.PI;
 public class ThroughBoreEncoder {
     private DutyCycle cycle;
     private double offset;
+    private boolean invert = false;
 
     public ThroughBoreEncoder(int port, double offsetDegrees) {
         this.cycle = new DutyCycle(new DigitalInput(port));
         this.offset = offsetDegrees / 360.0;
     }
 
+    public void setInverted(boolean value) {
+        invert = value;
+    }
+
     public double getRaw() {
-        return Math.IEEEremainder(cycle.getOutput() - offset, 1);
+        return Math.IEEEremainder(((invert ? -1 : 1) * cycle.getOutput()) - offset, 1);
     }
 
     public double getDegrees() {
