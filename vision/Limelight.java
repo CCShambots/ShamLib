@@ -8,7 +8,6 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class Limelight {
 
-
     private NetworkTable table;
 
     Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
@@ -42,10 +41,18 @@ public class Limelight {
         return table.getEntry("tv").getDouble(0) == 1;
     }
 
+    /**
+     * Get the x offset of the limelight target
+     * @return x offset
+     */
     public Rotation2d getXOffset() {
         return Rotation2d.fromDegrees(-table.getEntry("tx").getDouble(0));
     }
 
+    /**
+     * Get the y offset of the limelight target
+     * @return y offset
+     */
     public Rotation2d getYOffset() {
         return Rotation2d.fromDegrees(table.getEntry("ty").getDouble(0));
 
@@ -72,6 +79,10 @@ public class Limelight {
         return table.getEntry("tl").getDouble(0);
     }
 
+    /**
+     * Get the Pose3d of the camera from the limelight
+     * @return pose of the camera
+     */
     public Pose3d getPose3d() {
 
         Double[] botPose = table.getEntry("botpose").getDoubleArray(defaultPose);
