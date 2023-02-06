@@ -1,13 +1,16 @@
 package frc.robot.ShamLib.vision;
 
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 public class Limelight {
 
-
     private NetworkTable table;
+
+    Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
 
     /**
      * Creates a limelight object
@@ -38,10 +41,18 @@ public class Limelight {
         return table.getEntry("tv").getDouble(0) == 1;
     }
 
+    /**
+     * Get the x offset of the limelight target
+     * @return x offset
+     */
     public Rotation2d getXOffset() {
         return Rotation2d.fromDegrees(-table.getEntry("tx").getDouble(0));
     }
 
+    /**
+     * Get the y offset of the limelight target
+     * @return y offset
+     */
     public Rotation2d getYOffset() {
         return Rotation2d.fromDegrees(table.getEntry("ty").getDouble(0));
 
@@ -66,6 +77,19 @@ public class Limelight {
      */
     public double getLatency() {
         return table.getEntry("tl").getDouble(0);
+    }
+
+    /**
+     * Get the Pose3d of the camera from the limelight
+     * @return pose of the camera
+     */
+    public Pose3d getPose3d() {
+
+        Double[] botPose = table.getEntry("botpose").getDoubleArray(defaultPose);
+
+        Pose3d pose = new Pose3d(botPose[0], botPose[1], botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
+
+        return pose;
     }
 
 }
