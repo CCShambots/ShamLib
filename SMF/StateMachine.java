@@ -150,20 +150,39 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         addOmniTransition(state, new InstantCommand(run));
     }
 
+    /**
+     * Add a transition both ways between two states
+     * @param start beginning state
+     * @param end ending state
+     * @param run the command to run between them
+     */
     public void addCommutativeTransition(E start, E end, Command run) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run));
     }
 
+    /**
+     * Add a transition both ways between two states
+     * @param start beginning state
+     * @param end ending state
+     * @param run1 the command to run between start and end
+     * @param run2 the command to run between end and start
+     */
     public void addCommutativeTransition(E start, E end, Command run1, Command run2) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run1));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run2));
     }
 
+    /**
+     * @return true if the machine is actively transitioning between states
+     */
     public boolean isTransitioning() {
         return currentTransition != null;
     }
 
+    /**
+     * @return the object that returns the current transition information. Will be null if there is no transition
+     */
     public TransitionBase<E> getCurrentTransition() {
         return currentTransition;
     }
@@ -186,37 +205,73 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
     }
 
+    /**
+     * Request an instance-based state on the state machine
+     * @param state the state to go to
+     * @param command the command to run upon reaching the state
+     */
     public void requestTransition(E state, Command command) {
         stateCommands.put(state, command);
         requestTransition(state);
     }
 
+    /**
+     * A command that will keep running until it gets to the target state
+     * @param state the state to go to
+     * @return the command to run
+     */
     public Command transitionCommand(E state) {
         return new FunctionalCommand(() -> requestTransition(state),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
 
+    /**
+     * A command that will keep running until it gets to the target state, but it supports instance-based states
+     * @param state the state to go to
+     * @param command the command to run upon reaching that state
+     * @return the command to run
+     */
     public Command transitionCommand(E state, Command command) {
         return new FunctionalCommand(() -> requestTransition(state, command),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
 
+    /**
+     * Get the current flags of a state
+     * @return the current flags
+     */
     public Set<E> getCurrentFlags() {
         return currentFlags;
     }
 
+    /**
+     * Determine whether a state is currently an active flag state
+     * @param state the state to evaluate
+     * @return whether the state is currently a flag or not
+     */
     public boolean isFlag(E state) {
         return getCurrentFlags().contains(state);
     }
 
+    /**
+     * Add a flag state to the current state
+     * @param flag the flag state
+     */
     public void setFlag(E flag) {
         currentFlags.add(flag);
     }
 
+    /**
+     * Remove a specific flag state from the list of flags states
+     * @param flag the flag state to clear
+     */
     public void clearFlag(E flag) {
         currentFlags.remove(flag);
     }
 
+    /**
+     * Clear all states that are currently flags
+     */
     public void clearFlags() {
         currentFlags.clear();
     }
