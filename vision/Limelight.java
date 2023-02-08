@@ -6,11 +6,15 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
+import static java.lang.Math.IEEEremainder;
+import static java.lang.Math.PI;
+
 public class Limelight {
 
     private NetworkTable table;
 
     Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
+    Double[] defaultConeAngle = new Double[]{0.};
 
     /**
      * Creates a limelight object
@@ -92,4 +96,17 @@ public class Limelight {
         return pose;
     }
 
+    /**
+     * Get the rotation of a knocked-over cone when it is detected by the limelight
+     */
+    public Rotation2d getConeAngle() {
+        double value = table.getEntry("llpython").getDoubleArray(defaultConeAngle)[0];
+        double corrected = IEEEremainder(value, PI * 2);
+        return new Rotation2d(corrected);
+    }
+
+
+    public void setPipeline(int pipeline) {
+        table.getEntry("pipeline").setInteger(pipeline);
+    }
 }
