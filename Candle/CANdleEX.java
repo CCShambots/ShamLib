@@ -32,4 +32,7 @@ public class CANdleEX extends CANdle {
 
     public void setBrightness(double percent) { configBrightnessScalar(percent, 0); }
 
+    public void setLEDs(RGB values) {
+        setLEDs(values.R, values.G, values.B);
+    }
 }
