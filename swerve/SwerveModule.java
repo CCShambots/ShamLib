@@ -56,7 +56,7 @@ public class SwerveModule implements Sendable{
         
         this.moduleName = name;
 
-        this.turnEncoder = new CANCoder(encoderID);
+        this.turnEncoder = new CANCoder(encoderID, canbus);
         turnEncoder.configFactoryDefault();
 
         turnEncoder.configSensorInitializationStrategy(SensorInitializationStrategy.BootToAbsolutePosition);
