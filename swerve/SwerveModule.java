@@ -13,10 +13,10 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.motors.pro.PIDSVGains;
 import frc.robot.ShamLib.motors.pro.MotionMagicTalonFXPro;
 import frc.robot.ShamLib.motors.pro.VelocityTalonFXPro;
-import frc.robot.ShamLib.motors.v5.PIDFGains;
 
 public class SwerveModule implements Sendable{
 
@@ -67,7 +67,7 @@ public class SwerveModule implements Sendable{
         turnMotor = new MotionMagicTalonFXPro(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(turnInverted); //All turn modules were inverted
 //        turnMotor.configNeutralDeadband(0.01);
-        turnMotor.resetPosition(-normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
 //        turnMotor.configSupplyCurrentLimit(currentLimit);
 
         //TODO: Figure out current limiting
@@ -88,8 +88,8 @@ public class SwerveModule implements Sendable{
                         int encoderID,
                         double encoderOffset,
                         Translation2d moduleOffset,
-                        PIDFGains driveGains,
-                        PIDFGains turnGains,
+                        PIDSVGains driveGains,
+                        PIDSVGains turnGains,
                         double maxTurnVelo,
                         double maxTurnAccel,
                         double turnRatio,
@@ -125,7 +125,7 @@ public class SwerveModule implements Sendable{
     }
 
     public double getDriveMotorRate(){
-        return driveMotor.getEncoderPosition();
+        return driveMotor.getEncoderVelocity();
     } 
 
     public double getDriveMotorPosition() {
@@ -150,9 +150,22 @@ public class SwerveModule implements Sendable{
         return moduleName;
     }
 
-    public Command calculateTurnKf(BooleanSupplier interrupt) {
-        return driveMotor.calculateKS(1, interrupt);
+    public Command calculateTurnKS(Trigger increment) {
+        return turnMotor.calculateKS(increment, 0.05);
     }
+
+    public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
+        return turnMotor.calculateKV(kS, 0.05, increment, interrupt);
+    }
+
+    public Command calculateDriveKS(Trigger increment) {
+        return driveMotor.calculateKS(increment, 0.05);
+    }
+
+    public Command calculateDriveKV(double kS, Trigger increment, BooleanSupplier interrupt, boolean telemetry) {
+        return driveMotor.calculateKV(kS, 0.05, increment, interrupt, telemetry);
+    }
+
 
     @Override
     public void initSendable(SendableBuilder builder) {
@@ -168,9 +181,8 @@ public class SwerveModule implements Sendable{
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
         builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
         builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);
-        builder.addDoubleProperty("Velo error", () -> Math.abs(driveMotor.getTarget() - driveMotor.getEncoderVelocity()), null);
+        builder.addDoubleProperty("Velo error", () -> Math.abs(driveMotor.getTarget() - getDriveMotorRate()), null);
 
-        // builder.addDoubleProperty("Encoder offset", () -> encoderOffset, null);
     }
     
 }

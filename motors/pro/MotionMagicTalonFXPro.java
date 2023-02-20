@@ -4,6 +4,8 @@ import com.ctre.phoenixpro.configs.MotionMagicConfigs;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.controls.MotionMagicVoltage;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
     private int kTimeoutMs = 30;
 
@@ -26,15 +28,13 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
         config.Slot0 = configurePIDLoop(gains);
 
         //Set the acceleration and cruise velocity - see documentation
-        if(maxVel > 0 && maxAccel > 0) {
-            MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
+        MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
 
-            motionMagicConfigs.MotionMagicAcceleration = outputToTicks(maxAccel);
-            motionMagicConfigs.MotionMagicCruiseVelocity = outputToTicks(maxVel);
-            motionMagicConfigs.MotionMagicJerk = 800;
+        motionMagicConfigs.MotionMagicAcceleration = maxAccel;
+        motionMagicConfigs.MotionMagicCruiseVelocity = maxVel;
+        motionMagicConfigs.MotionMagicJerk = 0; //6400
 
-            config.MotionMagic = motionMagicConfigs;
-        }
+        config.MotionMagic = motionMagicConfigs;
 
         getConfigurator().apply(config);
     }

@@ -22,7 +22,7 @@ public class VelocityTalonFXPro extends EnhancedTalonFXPro {
         TalonFXConfiguration config = new TalonFXConfiguration();
 
         config.Slot0 = configurePIDLoop(gains);
-
+        
         getConfigurator().apply(config);
     }
 
@@ -42,6 +42,8 @@ public class VelocityTalonFXPro extends EnhancedTalonFXPro {
      */
     public void setTarget(double target) {
         setControl(new VelocityVoltage(outputToTicks(target)).withSlot(0));
+
+        this.target = target;
     }
 
     /**

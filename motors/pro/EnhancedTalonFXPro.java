@@ -2,15 +2,13 @@ package frc.robot.ShamLib.motors.pro;
 
 import com.ctre.phoenixpro.configs.Slot0Configs;
 import com.ctre.phoenixpro.hardware.TalonFX;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
@@ -117,48 +115,43 @@ public class EnhancedTalonFXPro extends TalonFX {
     }
 
     /**
-     * Command to calculate the kF value for a PIDF loop to run on a motor
-     * It will run until the interrupt is triggered, and then print its results to the console
-     * @param power raw power of the motor (0-1)
-     * @param offsetTime time to wait before tracking data (seconds)
-     * @param interrupt the condition to end the command
+     *
+     * @param kS kS value on the motor
+     * @param voltageIncrement amount of volts to increment per tap
+     * @param increment trigger to increase amount of voltage
+     * @param interrupt supplier to interrupt 
      * @return the command to run
      */
-    public Command calculateKV(double power, double offsetTime, BooleanSupplier interrupt) {
-        List<Double> rawVelos = new ArrayList<>();
-        List<Double> filteredVelos = new ArrayList<>();
-        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02);
-        
+    public Command calculateKV(double kS, double voltageIncrement, Trigger increment, BooleanSupplier interrupt, boolean telemetry) {
+
+        AtomicInteger currentMultiple = new AtomicInteger();
+
+        increment.onTrue(new InstantCommand(currentMultiple::getAndIncrement));
+
         Timer timer = new Timer();
 
         return new FunctionalCommand(
                 () -> {
-                    setManualPower(Math.abs(power));
-                    timer.start();
+                    System.out.println("Starting KV calculation");
+                    currentMultiple.set(0);
                 },
                 () -> {
-                    if(timer.get() > offsetTime) {
-                        filteredVelos.add(filter.calculate(getVelocity().getValue()));
-                        rawVelos.add(getVelocity().getValue());
-                    }
+                    double voltage = kS + currentMultiple.get() * voltageIncrement;
+
+                    setVoltage(kS + currentMultiple.get() * voltageIncrement);
+
+                    if(telemetry) System.out.println("(KV) volts: " + (voltage-kS) + ", velocity: " + getVelocity().getValue());
+
                 },
                 (interrupted) -> {
                     setManualPower(0);
-                    double maxFiltered = filteredVelos.stream().max(Double::compare).get();
-                    double maxRaw = rawVelos.stream().max(Double::compare).get();
-                    System.out.println("filtered kF: " + (power * 1023.0) / maxFiltered);
-                    System.out.println("raw kF: " + (power * 1023.0) / maxRaw);
                 },
                 () -> interrupt.getAsBoolean()
         );
     }
 
-    public Command calculateKV(double power, BooleanSupplier interrupt) {
-        return calculateKV(power, 1, interrupt);
-    }
-
-    public Command calculateKV(double power) {
-        return calculateKV(power, 1, () -> false);
+    public Command calculateKV(double kS, double voltageIncrement, Trigger increment, BooleanSupplier interrupt) {
+        return calculateKV(kS, voltageIncrement, increment, interrupt, true);
     }
 
     public Command calculateKS(Trigger incrementPower, double voltageIncrement) {
@@ -168,13 +161,15 @@ public class EnhancedTalonFXPro extends TalonFX {
 
         return new FunctionalCommand(
             () -> {
-
+                System.out.println("Starting kS calculation");
             },
-            () -> setVoltage(volts.get()),
+            () -> {
+                setVoltage(volts.get());
+                System.out.println("(KS) Volts: " + volts.get() + ", Velo (units/sec): " + getEncoderVelocity());
+            },
             (interrupted) -> {
-                System.out.println("Volts: " + volts.get() + ", Velo (units/sec): " + getEncoderVelocity());
             },
-            () -> getEncoderVelocity() > (1.0/60.0)
+            () -> false 
         );
     }
 

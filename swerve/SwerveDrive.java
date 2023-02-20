@@ -17,6 +17,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
 import frc.robot.ShamLib.motors.pro.PIDSVGains;
 
@@ -305,7 +306,30 @@ public class SwerveDrive {
         return modules;
     }
 
-    public Command calculateKF(BooleanSupplier interrupt) {
-        return modules.get(0).calculateTurnKf(interrupt);
+    public Command calculateTurnKS(Trigger increment) {
+        return modules.get(0).calculateTurnKS(increment);
+    }
+    public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
+        return modules.get(0).calculateTurnKV(kS, increment, interrupt);
+    }
+
+    public Command calculateDriveKS(Trigger increment) {
+        Command toRun = new InstantCommand();
+
+        for(SwerveModule module : modules) {
+            toRun = toRun.alongWith(module.calculateDriveKS(increment));
+        }
+        
+        return toRun;
+    }
+    public Command calculateDriveKV(double kS, Trigger increment, BooleanSupplier interrupt) {
+        Command toRun = new InstantCommand();
+        boolean first = true;
+        for(SwerveModule module : modules) {
+            toRun = toRun.alongWith(module.calculateDriveKV(kS, increment, interrupt, first));
+            if(first) first = false;
+        }
+        
+        return toRun;
     }
 }
