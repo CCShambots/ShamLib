@@ -35,7 +35,9 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         this.encoderOffset = encoderOffset;
 
         absoluteEncoder.setPositionConversionFactor(inputToOutputRatio);
-        absoluteEncoder.setZeroOffset(encoderOffset);
+        // absoluteEncoder.setVelocityConversionFactor(inputToOutputRatio);
+
+        absoluteEncoder.setZeroOffset(encoderOffset + Math.PI);
 
         controller = getPIDController();
 
@@ -44,17 +46,18 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         controller.setI(gains.kI);
         controller.setD(gains.kD);
         controller.setIZone(gains.kIZone);
+        controller.setFF(gains.kFF);
 
         int smartMotionSlot = 0;
-        controller.setSmartMotionMaxVelocity(gains.maxVel, smartMotionSlot);
-        controller.setSmartMotionMinOutputVelocity(gains.minVel, smartMotionSlot);
-        controller.setSmartMotionMaxAccel(gains.maxAcc, smartMotionSlot);
-        controller.setSmartMotionAllowedClosedLoopError(gains.allowedError, smartMotionSlot);
+        controller.setSmartMotionMaxVelocity(gains.maxVel / inputToOutputRatio, smartMotionSlot);
+        controller.setSmartMotionMinOutputVelocity(gains.minVel / inputToOutputRatio, smartMotionSlot);
+        controller.setSmartMotionMaxAccel(gains.maxAcc / inputToOutputRatio, smartMotionSlot);
+        controller.setSmartMotionAllowedClosedLoopError(gains.allowedError / inputToOutputRatio, smartMotionSlot);
     }
 
     public void setTarget(double target) {
         this.target = target;
-        controller.setReference(target, ControlType.kSmartMotion);
+        controller.setReference(this.target - Math.PI, ControlType.kSmartMotion);
     }
 
     public double getTarget() {
@@ -62,9 +65,15 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
     }
 
     public double getPosition() {
-        return absoluteEncoder.getPosition();
+        return absoluteEncoder.getPosition() - Math.PI;
     }
 
+    public double getVelocity() {
+        return getEncoder().getVelocity();
+    }
 
+    public double getPIDOutput() {
+        return getAppliedOutput();
+    }
 
 }

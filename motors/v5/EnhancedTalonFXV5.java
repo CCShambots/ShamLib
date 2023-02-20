@@ -158,11 +158,11 @@ public class EnhancedTalonFXV5 extends WPI_TalonFX {
     }
 
     public Command calculateKF(double power, BooleanSupplier interrupt) {
-        return calculateKF(power, 1, interrupt);
+        return calculateKF(power, 0.5, interrupt);
     }
 
     public Command calculateKF(double power) {
-        return calculateKF(power, 1, () -> false);
+        return calculateKF(power, 0.5, () -> false);
     }
 }
 

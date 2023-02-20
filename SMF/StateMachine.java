@@ -4,6 +4,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
@@ -28,6 +29,12 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private boolean enabled;
     private Class<E> enumType;
 
+    /**
+     * Instantiate a new State Machine
+     * @param name name of the state machine to send over network tables
+     * @param undeterminedState the undetermined state of the subsystem
+     * @param enumType the class of enums to use for the state
+     */
     public StateMachine(String name, E undeterminedState, Class<E> enumType) {
         this.enumType = enumType;
 
@@ -43,10 +50,17 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         enabled = false;
     }
 
+    /**
+     * @return the current state of the machine
+     */
     public E getState() {
         return currentState;
     }
 
+    /**
+     * Enable the state machine to start running.
+     * Transitions and state commands will only run while the machine is enabled
+     */
     public void enable() {
         determineState();
         enabled = true;
@@ -54,8 +68,15 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         onEnable();
     }
 
+    /**
+     * User-implemented method run immediately on the machine being enabled
+     */
     protected abstract void onEnable();
 
+    /**
+     * Stop the state machine from running.
+     * No transitions or state commands will run while the machine is disabled
+     */
     public void disable() {
         enabled = false;
         if (currentTransition != null) currentTransition.cancel();
@@ -67,20 +88,51 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         onDisable();
     }
 
+    /**
+     * User-implemented method run immediately upon the machine being disabled
+     */
     protected abstract void onDisable();
 
+    /**
+     * @return whether the machine is in a determined state
+     */
     public boolean isDetermined() {
         return currentState != undeterminedState;
     }
 
-    public void registerStateCommand(E state, Command c) {
-        if (!stateCommands.containsKey(state)) stateCommands.put(state, c);
+    /**
+     * Add a state command to run upon reaching that state
+     * @param state the state during which the command should run
+     * @param command command to run
+     */
+    public void registerStateCommand(E state, Command command) {
+        if (!stateCommands.containsKey(state)) stateCommands.put(state, command);
     }
 
-    public void addTransition(E start, E end, Command run) {
-        transitionGraph.addEdge(new CommandTransition<>(start, end, run));
+    /**
+     * Add an instant state command to run upon reaching that state
+     * @param state the state during which the command should run
+     * @param toRun the command to run
+     */
+    public void registerStateCommand(E state, Runnable toRun) {
+        registerStateCommand(state, new InstantCommand(toRun));
     }
 
+    /**
+     * Create a new transition in the machine
+     * @param start the start state of the transition
+     * @param end the end state of the transition
+     * @param command the command to run
+     */
+    public void addTransition(E start, E end, Command command) {
+        transitionGraph.addEdge(new CommandTransition<>(start, end, command));
+    }
+
+    /**
+     * Adds a transition from every state to the given state
+     * @param state the state to go to
+     * @param run transition command to run
+     */
     public void addOmniTransition(E state, Command run) {
         for (E s : enumType.getEnumConstants()) {
             if(s != state) {
@@ -89,20 +141,48 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         }
     }
 
+    /**
+     * Adds a transition from every state to the given state
+     * @param state the state to go to
+     * @param run the transition runnable to run as an instant command
+     */
+    public void addOmniTransition(E state, Runnable run) {
+        addOmniTransition(state, new InstantCommand(run));
+    }
+
+    /**
+     * Add a transition both ways between two states
+     * @param start beginning state
+     * @param end ending state
+     * @param run the command to run between them
+     */
     public void addCommutativeTransition(E start, E end, Command run) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run));
     }
 
+    /**
+     * Add a transition both ways between two states
+     * @param start beginning state
+     * @param end ending state
+     * @param run1 the command to run between start and end
+     * @param run2 the command to run between end and start
+     */
     public void addCommutativeTransition(E start, E end, Command run1, Command run2) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run1));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run2));
     }
 
+    /**
+     * @return true if the machine is actively transitioning between states
+     */
     public boolean isTransitioning() {
         return currentTransition != null;
     }
 
+    /**
+     * @return the object that returns the current transition information. Will be null if there is no transition
+     */
     public TransitionBase<E> getCurrentTransition() {
         return currentTransition;
     }
@@ -125,37 +205,73 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
     }
 
+    /**
+     * Request an instance-based state on the state machine
+     * @param state the state to go to
+     * @param command the command to run upon reaching the state
+     */
     public void requestTransition(E state, Command command) {
         stateCommands.put(state, command);
         requestTransition(state);
     }
 
+    /**
+     * A command that will keep running until it gets to the target state
+     * @param state the state to go to
+     * @return the command to run
+     */
     public Command transitionCommand(E state) {
         return new FunctionalCommand(() -> requestTransition(state),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
 
+    /**
+     * A command that will keep running until it gets to the target state, but it supports instance-based states
+     * @param state the state to go to
+     * @param command the command to run upon reaching that state
+     * @return the command to run
+     */
     public Command transitionCommand(E state, Command command) {
         return new FunctionalCommand(() -> requestTransition(state, command),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
 
+    /**
+     * Get the current flags of a state
+     * @return the current flags
+     */
     public Set<E> getCurrentFlags() {
         return currentFlags;
     }
 
+    /**
+     * Determine whether a state is currently an active flag state
+     * @param state the state to evaluate
+     * @return whether the state is currently a flag or not
+     */
     public boolean isFlag(E state) {
         return getCurrentFlags().contains(state);
     }
 
+    /**
+     * Add a flag state to the current state
+     * @param flag the flag state
+     */
     public void setFlag(E flag) {
         currentFlags.add(flag);
     }
 
+    /**
+     * Remove a specific flag state from the list of flags states
+     * @param flag the flag state to clear
+     */
     public void clearFlag(E flag) {
         currentFlags.remove(flag);
     }
 
+    /**
+     * Clear all states that are currently flags
+     */
     public void clearFlags() {
         currentFlags.clear();
     }
@@ -209,6 +325,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         if (!isDetermined()) determineSelf();
     }
     protected abstract void update();
+
+    /**
+     * User-implemented method to determine the state of the machine.
+     * THIS METHOD IS RESPONSIBLE FOR CALLING the setState() method
+     */
     protected abstract void determineSelf();
 
 
