@@ -6,7 +6,6 @@ import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
-import frc.robot.ShamLib.motors.PIDFGains;
 
 import java.util.ArrayList;
 import java.util.List;

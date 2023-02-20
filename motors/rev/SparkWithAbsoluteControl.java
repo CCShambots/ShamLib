@@ -1,11 +1,10 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.rev;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxPIDController;
 
 import static com.revrobotics.SparkMaxAbsoluteEncoder.Type.kDutyCycle;
-import static java.lang.Math.PI;
 
 public class SparkWithAbsoluteControl extends CANSparkMax {
 

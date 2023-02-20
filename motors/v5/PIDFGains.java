@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.v5;
 
 //💪gains
 

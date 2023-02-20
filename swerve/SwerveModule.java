@@ -13,16 +13,17 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.ShamLib.motors.v5.MotionMagicTalonFXV5;
-import frc.robot.ShamLib.motors.PIDFGains;
-import frc.robot.ShamLib.motors.v5.VelocityTalonFXV5;
+import frc.robot.ShamLib.motors.pro.PIDSVGains;
+import frc.robot.ShamLib.motors.pro.MotionMagicTalonFXPro;
+import frc.robot.ShamLib.motors.pro.VelocityTalonFXPro;
+import frc.robot.ShamLib.motors.v5.PIDFGains;
 
 public class SwerveModule implements Sendable{
 
     private final String moduleName;
 
-    private final MotionMagicTalonFXV5 turnMotor;
-    private final VelocityTalonFXV5 driveMotor;
+    private final MotionMagicTalonFXPro turnMotor;
+    private final VelocityTalonFXPro driveMotor;
 
     private final CANCoder turnEncoder;
     private double encoderOffset;
@@ -40,8 +41,8 @@ public class SwerveModule implements Sendable{
                         int encoderID,
                         double encoderOffset,
                         Translation2d moduleOffset,
-                        PIDFGains driveGains,
-                        PIDFGains turnGains,
+                        PIDSVGains driveGains,
+                        PIDSVGains turnGains,
                         double maxTurnVelo,
                         double maxTurnAccel,
                         double turnRatio,
@@ -63,16 +64,18 @@ public class SwerveModule implements Sendable{
 
         this.encoderOffset = encoderOffset;
 
-        turnMotor = new MotionMagicTalonFXV5(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
+        turnMotor = new MotionMagicTalonFXPro(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(turnInverted); //All turn modules were inverted
-        turnMotor.configNeutralDeadband(0.01);
+//        turnMotor.configNeutralDeadband(0.01);
         turnMotor.resetPosition(-normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
-        turnMotor.configSupplyCurrentLimit(currentLimit);
+//        turnMotor.configSupplyCurrentLimit(currentLimit);
 
-        driveMotor = new VelocityTalonFXV5(driveID, canbus, driveGains, driveRatio);
+        //TODO: Figure out current limiting
+
+        driveMotor = new VelocityTalonFXPro(driveID, canbus, driveGains, driveRatio);
         driveMotor.setInverted(driveInverted);
 
-        driveMotor.configSupplyCurrentLimit(currentLimit);
+//        driveMotor.configSupplyCurrentLimit(currentLimit);
 
         setDesiredState(
             new SwerveModuleState(0, getTurnAngle())
@@ -109,7 +112,7 @@ public class SwerveModule implements Sendable{
     public void setDesiredState(SwerveModuleState state) {
         SwerveModuleState optimizedState = SwerveModuleState.optimize(state, getTurnAngle());
         targetState = optimizedState;        
-        double turnPos = turnMotor.getPosition();
+        double turnPos = turnMotor.getEncoderPosition();
         targetModuleAngle = turnPos + (normalizeDegrees(optimizedState.angle.getDegrees() - normalizeDegrees(turnPos)));
 
         turnMotor.setTarget(targetModuleAngle);
@@ -118,15 +121,15 @@ public class SwerveModule implements Sendable{
     }
 
     public Rotation2d getTurnAngle(){
-        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getPosition()));
+        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getEncoderPosition()));
     }
 
     public double getDriveMotorRate(){
-        return driveMotor.getVelocity();
+        return driveMotor.getEncoderPosition();
     } 
 
     public double getDriveMotorPosition() {
-        return driveMotor.getPosition();
+        return driveMotor.getEncoderPosition();
     }
 
     public SwerveModuleState getCurrentState() {
@@ -148,7 +151,7 @@ public class SwerveModule implements Sendable{
     }
 
     public Command calculateTurnKf(BooleanSupplier interrupt) {
-        return driveMotor.calculateKF(1, interrupt);
+        return driveMotor.calculateKS(1, interrupt);
     }
 
     @Override
@@ -159,13 +162,13 @@ public class SwerveModule implements Sendable{
         builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset), null);
         // builder.addDoubleProperty("Degree Angle (motor)", () -> turnMotor.getPosition(), null);
         // builder.addDoubleProperty("Raw Angle (motor)", () -> turnMotor.getSelectedSensorPosition(), null);
-        builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getClosedLoopTarget(0), null);
-        builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getPosition()), null);
+        builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getTarget(), null);
+        builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getEncoderPosition()), null);
         // builder.addDoubleProperty("Absolute Angle", () -> turnEncoder.getAbsolutePosition(), null);
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
         builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
         builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);
-        builder.addDoubleProperty("Velo error", () -> Math.abs(driveMotor.getTarget() - driveMotor.getVelocity()), null);
+        builder.addDoubleProperty("Velo error", () -> Math.abs(driveMotor.getTarget() - driveMotor.getEncoderVelocity()), null);
 
         // builder.addDoubleProperty("Encoder offset", () -> encoderOffset, null);
     }

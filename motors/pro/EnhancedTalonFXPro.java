@@ -1,7 +1,6 @@
 package frc.robot.ShamLib.motors.pro;
 
 import com.ctre.phoenixpro.configs.Slot0Configs;
-import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.hardware.TalonFX;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj.Timer;
@@ -9,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.ShamLib.motors.PIDSVGains;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -163,7 +161,7 @@ public class EnhancedTalonFXPro extends TalonFX {
         return calculateKV(power, 1, () -> false);
     }
 
-    public Command calculateKS(Trigger incrementPower, double voltageIncrement, BooleanSupplier interrupt) {
+    public Command calculateKS(Trigger incrementPower, double voltageIncrement) {
         AtomicReference<Double> volts = new AtomicReference<>((double) 0);
 
         incrementPower.onTrue(new InstantCommand(() -> volts.set(volts.get() + voltageIncrement)));
@@ -174,14 +172,15 @@ public class EnhancedTalonFXPro extends TalonFX {
             },
             () -> setVoltage(volts.get()),
             (interrupted) -> {
-
+                System.out.println("Volts: " + volts.get() + ", Velo (units/sec): " + getEncoderVelocity());
             },
             () -> getEncoderVelocity() > (1.0/60.0)
         );
     }
 
-    public Command calculateKS(Trigger incrementPower, double voltageIncrement) {
-        return calculateKS(incrementPower, voltageIncrement, () -> false);
+
+    public Command calculateKS(Trigger incrementPower) {
+        return calculateKS(incrementPower, 0.05);
     }
 }
 

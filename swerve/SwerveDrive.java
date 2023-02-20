@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.PIDGains;
-import frc.robot.ShamLib.motors.PIDFGains;
+import frc.robot.ShamLib.motors.pro.PIDSVGains;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -46,8 +46,8 @@ public class SwerveDrive {
     /**
      * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
-     * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
-     * @param moduleTurnGains PIDF gains for the position of the swerve modules
+     * @param moduleDriveGains PIDSV gains for the velocity of the swerve modules
+     * @param moduleTurnGains PIDSV gains for the position of the swerve modules
      * @param maxModuleTurnVelo maximum velocity the turn motors should go
      * @param maxModuleTurnAccel maximum acceleration the turn motors should go
      * @param teleThetaGains PID gains for the angle hold controller in teleop
@@ -59,8 +59,8 @@ public class SwerveDrive {
      * @param moduleInfos Array of module infos, one for each module
      */
     public SwerveDrive(int pigeon2ID,
-                       PIDFGains moduleDriveGains,
-                       PIDFGains moduleTurnGains,
+                       PIDSVGains moduleDriveGains,
+                       PIDSVGains moduleTurnGains,
                        double maxChassisSpeed,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,

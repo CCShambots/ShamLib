@@ -1,13 +1,7 @@
 package frc.robot.ShamLib.motors.pro;
 
-import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
-import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
-import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
-import com.ctre.phoenixpro.configs.MotionMagicConfigs;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.controls.VelocityVoltage;
-import frc.robot.ShamLib.motors.PIDFGains;
-import frc.robot.ShamLib.motors.PIDSVGains;
 
 public class VelocityTalonFXPro extends EnhancedTalonFXPro {
 
