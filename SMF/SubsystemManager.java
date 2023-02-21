@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.SMF;
 
+import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import java.util.*;
@@ -23,6 +24,10 @@ public class SubsystemManager {
 
     private void sendOnNt(StateMachine<?> subsystem) {
         SmartDashboard.putData(subsystem.getName(), subsystem);
+
+        for(Map.Entry<String, Sendable> entry : subsystem.additionalSendables().entrySet()) {
+            SmartDashboard.putData("/" + subsystem.getName() + "/" + entry.getKey(), entry.getValue());
+        }
     }
 
     /**

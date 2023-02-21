@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.SMF;
 
+import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -12,6 +13,7 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static frc.robot.ShamLib.SMFConstants.SMF.transitionTimeout;
@@ -360,6 +362,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         additionalSendableData(builder);
     }
 
-    protected abstract void additionalSendableData(SendableBuilder builder);
+    protected void additionalSendableData(SendableBuilder builder) {}
+
+    public Map<String, Sendable> additionalSendables() {
+        return new HashMap<>();
+    }
 
 }
