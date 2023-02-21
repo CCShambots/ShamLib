@@ -73,7 +73,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * User-implemented method run immediately on the machine being enabled
      */
-    protected abstract void onEnable();
+    protected void onEnable() {}
 
     /**
      * Stop the state machine from running.
@@ -93,7 +93,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * User-implemented method run immediately upon the machine being disabled
      */
-    protected abstract void onDisable();
+    protected void onDisable() {}
 
     /**
      * @return whether the machine is in a determined state
@@ -326,7 +326,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public void determineState() {
         if (!isDetermined()) determineSelf();
     }
-    protected abstract void update();
+    protected void update() {}
 
     /**
      * User-implemented method to determine the state of the machine.
