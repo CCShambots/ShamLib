@@ -2,16 +2,43 @@ package frc.robot.ShamLib.motors.v5;
 
 //💪gains
 
-public class PIDFGains {
-	public final double kP;
-	public final double kI;
-	public final double kD;
-	public final double kF;
+import edu.wpi.first.util.sendable.Sendable;
+import edu.wpi.first.util.sendable.SendableBuilder;
+
+public class PIDFGains implements Sendable {
+	private double P;
+	private double I;
+	private double D;
+	private double F;
 
 	public PIDFGains(double _kP, double _kI, double _kD, double _kF){
-		kP = _kP;
-		kI = _kI;
-		kD = _kD;
-		kF = _kF;
+		P = _kP;
+		I = _kI;
+		D = _kD;
+		F = _kF;
+	}
+
+	public double getP() {
+		return P;
+	}
+
+	public double getI() {
+		return I;
+	}
+
+	public double getD() {
+		return D;
+	}
+
+	public double getF() {
+		return F;
+	}
+
+	@Override
+	public void initSendable(SendableBuilder builder) {
+		builder.addDoubleProperty("P", () -> P, (value) -> P = value);
+		builder.addDoubleProperty("I", () -> I, (value) -> I = value);
+		builder.addDoubleProperty("D", () -> D, (value) -> D = value);
+		builder.addDoubleProperty("F", () -> F, (value) -> F = value);
 	}
 }

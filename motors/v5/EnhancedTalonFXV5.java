@@ -113,10 +113,10 @@ public class EnhancedTalonFXV5 extends WPI_TalonFX {
     public void configurePIDLoop(int idx, PIDFGains gains) {
         //Set the motion magic gains in slot0
         selectProfileSlot(idx, 0);
-        config_kF(idx, gains.kF, kTimeoutMs);
-        config_kP(idx, gains.kP, kTimeoutMs);
-        config_kI(idx, gains.kI, kTimeoutMs);
-        config_kD(idx, gains.kD, kTimeoutMs);
+        config_kF(idx, gains.getF(), kTimeoutMs);
+        config_kP(idx, gains.getP(), kTimeoutMs);
+        config_kI(idx, gains.getI(), kTimeoutMs);
+        config_kD(idx, gains.getD(), kTimeoutMs);
     }
 
     /**

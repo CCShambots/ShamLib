@@ -105,17 +105,18 @@ public class EnhancedTalonFXPro extends TalonFX {
     public Slot0Configs configurePIDLoop(PIDSVGains gains) {
         //Set the motion magic gains in slot0
         Slot0Configs pidConfigs = new Slot0Configs();
-        pidConfigs.kS = gains.kS;
-        pidConfigs.kV = gains.kV;
-        pidConfigs.kP = gains.kP;
-        pidConfigs.kI = gains.kI;
-        pidConfigs.kD = gains.kD;
+        pidConfigs.kS = gains.getS();
+        pidConfigs.kV = gains.getV();
+        pidConfigs.kP = gains.getP();
+        pidConfigs.kI = gains.getI();
+        pidConfigs.kD = gains.getD();
 
         return pidConfigs;
     }
 
+
+    //TODO: Make this not garbage
     /**
-     *
      * @param kS kS value on the motor
      * @param voltageIncrement amount of volts to increment per tap
      * @param increment trigger to increase amount of voltage
@@ -127,8 +128,6 @@ public class EnhancedTalonFXPro extends TalonFX {
         AtomicInteger currentMultiple = new AtomicInteger();
 
         increment.onTrue(new InstantCommand(currentMultiple::getAndIncrement));
-
-        Timer timer = new Timer();
 
         return new FunctionalCommand(
                 () -> {
@@ -154,28 +153,5 @@ public class EnhancedTalonFXPro extends TalonFX {
         return calculateKV(kS, voltageIncrement, increment, interrupt, true);
     }
 
-    public Command calculateKS(Trigger incrementPower, double voltageIncrement) {
-        AtomicReference<Double> volts = new AtomicReference<>((double) 0);
-
-        incrementPower.onTrue(new InstantCommand(() -> volts.set(volts.get() + voltageIncrement)));
-
-        return new FunctionalCommand(
-            () -> {
-                System.out.println("Starting kS calculation");
-            },
-            () -> {
-                setVoltage(volts.get());
-                System.out.println("(KS) Volts: " + volts.get() + ", Velo (units/sec): " + getEncoderVelocity());
-            },
-            (interrupted) -> {
-            },
-            () -> false 
-        );
-    }
-
-
-    public Command calculateKS(Trigger incrementPower) {
-        return calculateKS(incrementPower, 0.05);
-    }
 }
 
