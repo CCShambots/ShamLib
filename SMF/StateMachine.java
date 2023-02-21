@@ -75,6 +75,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      */
     protected void onEnable() {}
 
+    protected void onTeleopStart() {}
+
+    protected void onAutonomousStart() {}
+
     /**
      * Stop the state machine from running.
      * No transitions or state commands will run while the machine is disabled
