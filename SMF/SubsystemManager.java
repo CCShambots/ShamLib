@@ -30,6 +30,22 @@ public class SubsystemManager {
         }
     }
 
+    public void notifyTeleopStart() {
+        prepSubsystems();
+
+        for (StateMachine<?> sm : subsystems) {
+            sm.onTeleopStart();
+        }
+    }
+
+    public void notifyAutonomousStart() {
+        prepSubsystems();
+
+        for (StateMachine<?> sm : subsystems) {
+            sm.onAutonomousStart();
+        }
+    }
+
     /**
      * Register a number of subsystems at once
      * @param subsystems array of stated subsystems 
