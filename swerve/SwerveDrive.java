@@ -282,19 +282,16 @@ public class SwerveDrive {
         return new SequentialCommandGroup(
             getTrajectoryCommand(trajectory, resetPose, requirements),
             new InstantCommand(() -> setHoldAngle(trajectory.getEndState().poseMeters.getRotation()))
-            // new FunctionalCommand(() -> {}, () -> {
-            //     drive(null, resetPose);
-            // }, (interrupted) -> {}, () -> timer.get() > 0.5)
         );
 
     }
 
-    public TrajectoryBuilder buildTrajectory(PathConstraints constraints) {
+    public TrajectoryBuilder getTrajectoryBuilder(PathConstraints constraints) {
         return new TrajectoryBuilder(getPose(), kDriveKinematics.toChassisSpeeds(getModuleStates()), constraints);
     }
 
-    public TrajectoryBuilder buildTrajectory() {
-        return buildTrajectory(new PathConstraints(this.maxChassisSpeed, this.maxChassisAccel));
+    public TrajectoryBuilder getTrajectoryBuilder() {
+        return getTrajectoryBuilder(new PathConstraints(this.maxChassisSpeed, this.maxChassisAccel));
     }
 
     public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, Subsystem... requirements) {
