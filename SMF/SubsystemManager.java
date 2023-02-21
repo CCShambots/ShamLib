@@ -30,6 +30,9 @@ public class SubsystemManager {
         }
     }
 
+    /**
+     * Call in teleopInit(), will notify all subsystems that the teleoperated period has started
+     */
     public void notifyTeleopStart() {
         prepSubsystems();
 
@@ -38,6 +41,9 @@ public class SubsystemManager {
         }
     }
 
+    /**
+     * Call in autonomousInit(), will notify all subsystems that the autonomous period has started
+     */
     public void notifyAutonomousStart() {
         prepSubsystems();
 
