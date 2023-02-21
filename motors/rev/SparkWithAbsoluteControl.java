@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.rev;
 
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;

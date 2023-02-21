@@ -16,9 +16,11 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
-import frc.robot.ShamLib.motors.PIDFGains;
+import frc.robot.ShamLib.motors.pro.PIDSVGains;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -46,8 +48,8 @@ public class SwerveDrive {
     /**
      * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
-     * @param moduleDriveGains PIDF gains for the velocity of the swerve modules
-     * @param moduleTurnGains PIDF gains for the position of the swerve modules
+     * @param moduleDriveGains PIDSV gains for the velocity of the swerve modules
+     * @param moduleTurnGains PIDSV gains for the position of the swerve modules
      * @param maxModuleTurnVelo maximum velocity the turn motors should go
      * @param maxModuleTurnAccel maximum acceleration the turn motors should go
      * @param teleThetaGains PID gains for the angle hold controller in teleop
@@ -59,8 +61,8 @@ public class SwerveDrive {
      * @param moduleInfos Array of module infos, one for each module
      */
     public SwerveDrive(int pigeon2ID,
-                       PIDFGains moduleDriveGains,
-                       PIDFGains moduleTurnGains,
+                       PIDSVGains moduleDriveGains,
+                       PIDSVGains moduleTurnGains,
                        double maxChassisSpeed,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,
@@ -187,6 +189,8 @@ public class SwerveDrive {
      * @param allowHoldAngleChange whether the hold angle of the robot should change
      */
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
+
+        SmartDashboard.putString("chassis-speeds", speeds.toString());
         if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
             speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
             if(Math.abs(Math.toDegrees(speeds.omegaRadiansPerSecond)) < 4) {
@@ -305,7 +309,30 @@ public class SwerveDrive {
         return modules;
     }
 
-    public Command calculateKF(BooleanSupplier interrupt) {
-        return modules.get(0).calculateTurnKf(interrupt);
+    public Command calculateTurnKS(Trigger increment) {
+        return modules.get(0).calculateTurnKS(increment);
+    }
+    public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
+        return modules.get(0).calculateTurnKV(kS, increment, interrupt);
+    }
+
+    public Command calculateDriveKS(Trigger increment) {
+        Command toRun = new InstantCommand();
+
+        for(SwerveModule module : modules) {
+            toRun = toRun.alongWith(module.calculateDriveKS(increment));
+        }
+        
+        return toRun;
+    }
+    public Command calculateDriveKV(double kS, Trigger increment, BooleanSupplier interrupt) {
+        Command toRun = new InstantCommand();
+        boolean first = true;
+        for(SwerveModule module : modules) {
+            toRun = toRun.alongWith(module.calculateDriveKV(kS, increment, interrupt, first));
+            if(first) first = false;
+        }
+        
+        return toRun;
     }
 }

@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.v5;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 
-public class EnhancedTalonFX extends WPI_TalonFX {
+public class EnhancedTalonFXV5 extends WPI_TalonFX {
     private int kTimeoutMs = 30;
 
     private double inputToOutputRatio;
@@ -23,7 +23,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * @param canbus name of the canbus (i.e. for CANivore)
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units (i.e. degree/tick)
      */
-    public EnhancedTalonFX(int deviceNumber, String canbus, double inputToOutputRatio) {
+    public EnhancedTalonFXV5(int deviceNumber, String canbus, double inputToOutputRatio) {
         super(deviceNumber, canbus);
 
         this.inputToOutputRatio = inputToOutputRatio;
@@ -35,7 +35,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
      * @param deviceNumber CAN ID
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public EnhancedTalonFX(int deviceNumber,double inputToOutputRatio) {
+    public EnhancedTalonFXV5(int deviceNumber, double inputToOutputRatio) {
         this(deviceNumber, "", inputToOutputRatio);
     }
 
@@ -113,10 +113,10 @@ public class EnhancedTalonFX extends WPI_TalonFX {
     public void configurePIDLoop(int idx, PIDFGains gains) {
         //Set the motion magic gains in slot0
         selectProfileSlot(idx, 0);
-        config_kF(idx, gains.kF, kTimeoutMs);
-        config_kP(idx, gains.kP, kTimeoutMs);
-        config_kI(idx, gains.kI, kTimeoutMs);
-        config_kD(idx, gains.kD, kTimeoutMs);
+        config_kF(idx, gains.getF(), kTimeoutMs);
+        config_kP(idx, gains.getP(), kTimeoutMs);
+        config_kI(idx, gains.getI(), kTimeoutMs);
+        config_kD(idx, gains.getD(), kTimeoutMs);
     }
 
     /**
@@ -130,7 +130,7 @@ public class EnhancedTalonFX extends WPI_TalonFX {
     public Command calculateKF(double power, double offsetTime, BooleanSupplier interrupt) {
         List<Double> rawVelos = new ArrayList<>();
         List<Double> filteredVelos = new ArrayList<>();
-        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02); //TODO: These values might have to change if they're not useful
+        LinearFilter filter = LinearFilter.singlePoleIIR(0.1, 0.02);
         
         Timer timer = new Timer();
 
@@ -144,14 +144,20 @@ public class EnhancedTalonFX extends WPI_TalonFX {
                         filteredVelos.add(filter.calculate(getSelectedSensorVelocity()));
                         rawVelos.add(getSelectedSensorVelocity());
                     }
-                    System.out.println(getSelectedSensorVelocity());
+//                    System.out.println(getSelectedSensorVelocity()); //TODO: Delete
                 },
                 (interrupted) -> {
                     setManualPower(0);
-                    double maxFiltered = filteredVelos.stream().max(Double::compare).get();
-                    double maxRaw = rawVelos.stream().max(Double::compare).get();
-                    System.out.println("filtered kF: " + (power * 1023.0) / maxFiltered);
-                    System.out.println("raw kF: " + (power * 1023.0) / maxRaw);
+
+                    if(filteredVelos.size() > 0) { //Only return a filtered kF if the filtering ran for long enough
+                        double maxFiltered = filteredVelos.stream().max(Double::compare).get();
+                        System.out.println("filtered kF: " + (power * 1023.0) / maxFiltered);
+                    } else System.out.println("Not enough data for filtered kF");
+
+                    if(rawVelos.size() > 0) {
+                        double maxRaw = rawVelos.stream().max(Double::compare).get();
+                        System.out.println("raw kF: " + (power * 1023.0) / maxRaw);
+                    } else System.out.println("Not enough data for raw kF");
                 },
                 () -> interrupt.getAsBoolean()
         );

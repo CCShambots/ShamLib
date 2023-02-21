@@ -1,10 +1,10 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.v5;
 
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 
-public class VelocityTalonFX extends EnhancedTalonFX {
+public class VelocityTalonFXV5 extends EnhancedTalonFXV5 {
 
     private int kTimeoutMs = 30;
 
@@ -17,7 +17,7 @@ public class VelocityTalonFX extends EnhancedTalonFX {
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public VelocityTalonFX(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio) {
+    public VelocityTalonFXV5(int deviceNumber, String canbus, PIDFGains gains, double inputToOutputRatio) {
         super(deviceNumber, canbus, inputToOutputRatio);
 
         configFactoryDefault();
@@ -41,7 +41,7 @@ public class VelocityTalonFX extends EnhancedTalonFX {
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public VelocityTalonFX(int deviceNumber, PIDFGains gains, double inputToOutputRatio) {
+    public VelocityTalonFXV5(int deviceNumber, PIDFGains gains, double inputToOutputRatio) {
         this(deviceNumber, "", gains, inputToOutputRatio);
     }
 

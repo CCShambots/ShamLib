@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors;
+package frc.robot.ShamLib.motors.rev;
 
 public class SmartMotionValues {
     public final double kP;
