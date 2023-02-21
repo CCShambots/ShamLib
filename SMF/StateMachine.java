@@ -75,6 +75,17 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      */
     protected void onEnable() {}
 
+
+    /**
+     * User-implemented method ran immediately when the teleop period is started
+     */
+    protected void onTeleopStart() {}
+
+    /**
+     * User-implemented method ran immediately when the autonomous period is started
+     */
+    protected void onAutonomousStart() {}
+
     /**
      * Stop the state machine from running.
      * No transitions or state commands will run while the machine is disabled

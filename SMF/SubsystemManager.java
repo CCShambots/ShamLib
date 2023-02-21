@@ -31,6 +31,28 @@ public class SubsystemManager {
     }
 
     /**
+     * Call in teleopInit(), will notify all subsystems that the teleoperated period has started
+     */
+    public void notifyTeleopStart() {
+        prepSubsystems();
+
+        for (StateMachine<?> sm : subsystems) {
+            sm.onTeleopStart();
+        }
+    }
+
+    /**
+     * Call in autonomousInit(), will notify all subsystems that the autonomous period has started
+     */
+    public void notifyAutonomousStart() {
+        prepSubsystems();
+
+        for (StateMachine<?> sm : subsystems) {
+            sm.onAutonomousStart();
+        }
+    }
+
+    /**
      * Register a number of subsystems at once
      * @param subsystems array of stated subsystems 
      */
