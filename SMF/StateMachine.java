@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.SMF;
 
+import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -12,6 +13,7 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static frc.robot.ShamLib.SMFConstants.SMF.transitionTimeout;
@@ -71,7 +73,18 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * User-implemented method run immediately on the machine being enabled
      */
-    protected abstract void onEnable();
+    protected void onEnable() {}
+
+
+    /**
+     * User-implemented method ran immediately when the teleop period is started
+     */
+    protected void onTeleopStart() {}
+
+    /**
+     * User-implemented method ran immediately when the autonomous period is started
+     */
+    protected void onAutonomousStart() {}
 
     /**
      * Stop the state machine from running.
@@ -91,7 +104,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * User-implemented method run immediately upon the machine being disabled
      */
-    protected abstract void onDisable();
+    protected void onDisable() {}
 
     /**
      * @return whether the machine is in a determined state
@@ -324,7 +337,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public void determineState() {
         if (!isDetermined()) determineSelf();
     }
-    protected abstract void update();
+    protected void update() {}
 
     /**
      * User-implemented method to determine the state of the machine.
@@ -360,6 +373,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         additionalSendableData(builder);
     }
 
-    protected abstract void additionalSendableData(SendableBuilder builder);
+    protected void additionalSendableData(SendableBuilder builder) {}
+
+    public Map<String, Sendable> additionalSendables() {
+        return new HashMap<>();
+    }
 
 }
