@@ -309,22 +309,11 @@ public class SwerveDrive {
         return modules;
     }
 
-    public Command calculateTurnKS(Trigger increment) {
-        return modules.get(0).calculateTurnKS(increment);
-    }
+
     public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
         return modules.get(0).calculateTurnKV(kS, increment, interrupt);
     }
 
-    public Command calculateDriveKS(Trigger increment) {
-        Command toRun = new InstantCommand();
-
-        for(SwerveModule module : modules) {
-            toRun = toRun.alongWith(module.calculateDriveKS(increment));
-        }
-        
-        return toRun;
-    }
     public Command calculateDriveKV(double kS, Trigger increment, BooleanSupplier interrupt) {
         Command toRun = new InstantCommand();
         boolean first = true;
