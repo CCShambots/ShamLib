@@ -32,7 +32,7 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
 
         motionMagicConfigs.MotionMagicAcceleration = maxAccel;
         motionMagicConfigs.MotionMagicCruiseVelocity = maxVel;
-        motionMagicConfigs.MotionMagicJerk = 0; //6400
+        motionMagicConfigs.MotionMagicJerk = 10000;
 
         config.MotionMagic = motionMagicConfigs;
 
