@@ -13,8 +13,8 @@ public class Limelight {
 
     private NetworkTable table;
 
-    Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
-    Double[] defaultConeAngle = new Double[]{0.};
+    private Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
+    private Double[] defaultConeAngle = new Double[]{0.};
 
     /**
      * Creates a limelight object
@@ -91,7 +91,7 @@ public class Limelight {
 
         Double[] botPose = table.getEntry("botpose").getDoubleArray(defaultPose);
 
-        Pose3d pose = new Pose3d(botPose[0], botPose[1], botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
+        Pose3d pose = new Pose3d(botPose[0]+8.2296, botPose[1]+4.1148, botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
 
         return pose;
     }
