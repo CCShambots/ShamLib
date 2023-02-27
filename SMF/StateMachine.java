@@ -11,10 +11,7 @@ import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static frc.robot.ShamLib.SMFConstants.SMF.transitionTimeout;
 
@@ -30,6 +27,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private E currentState;
     private boolean enabled;
     private Class<E> enumType;
+    private List<StateMachine<?>> subsystems;
 
     /**
      * Instantiate a new State Machine
@@ -46,6 +44,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         transitionTimer = new Timer();
         currentFlags = new HashSet<>();
         stateCommands = new HashMap<>();
+        subsystems = new ArrayList<>();
         setName(name);
 
         transitionGraph = new DirectionalEnumGraph<>(enumType);
@@ -53,9 +52,24 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
+     * @return the child state-machines
+     */
+    public final List<StateMachine<?>> getChildSubsystems() {
+        return subsystems;
+    }
+
+    /**
+     * adds the specified system to the set of child subsystems owned by the current state machine
+     * @param machine the subsystem to add as a child
+     */
+    protected final void addChildSubsystem(StateMachine<?> machine) {
+        subsystems.add(machine);
+    }
+
+    /**
      * @return the current state of the machine
      */
-    public E getState() {
+    public final E getState() {
         return currentState;
     }
 
@@ -63,7 +77,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Enable the state machine to start running.
      * Transitions and state commands will only run while the machine is enabled
      */
-    public void enable() {
+    public final void enable() {
         determineState();
         enabled = true;
 
@@ -74,7 +88,6 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * User-implemented method run immediately on the machine being enabled
      */
     protected void onEnable() {}
-
 
     /**
      * User-implemented method ran immediately when the teleop period is started
@@ -90,7 +103,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Stop the state machine from running.
      * No transitions or state commands will run while the machine is disabled
      */
-    public void disable() {
+    public final void disable() {
         enabled = false;
         if (currentTransition != null) currentTransition.cancel();
         currentTransition = null;
@@ -109,7 +122,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * @return whether the machine is in a determined state
      */
-    public boolean isDetermined() {
+    public final boolean isDetermined() {
         return currentState != undeterminedState;
     }
 
@@ -118,7 +131,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state during which the command should run
      * @param command command to run
      */
-    public void registerStateCommand(E state, Command command) {
+    public final void registerStateCommand(E state, Command command) {
         if (!stateCommands.containsKey(state)) stateCommands.put(state, command);
     }
 
@@ -127,7 +140,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state during which the command should run
      * @param toRun the command to run
      */
-    public void registerStateCommand(E state, Runnable toRun) {
+    public final void registerStateCommand(E state, Runnable toRun) {
         registerStateCommand(state, new InstantCommand(toRun));
     }
 
@@ -137,7 +150,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param end the end state of the transition
      * @param command the command to run
      */
-    public void addTransition(E start, E end, Command command) {
+    public final void addTransition(E start, E end, Command command) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, command));
     }
 
@@ -146,7 +159,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state to go to
      * @param run transition command to run
      */
-    public void addOmniTransition(E state, Command run) {
+    public final void addOmniTransition(E state, Command run) {
         for (E s : enumType.getEnumConstants()) {
             if(s != state) {
                 addTransition(s, state, run);
@@ -159,7 +172,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state to go to
      * @param run the transition runnable to run as an instant command
      */
-    public void addOmniTransition(E state, Runnable run) {
+    public final void addOmniTransition(E state, Runnable run) {
         addOmniTransition(state, new InstantCommand(run));
     }
 
@@ -169,7 +182,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param end ending state
      * @param run the command to run between them
      */
-    public void addCommutativeTransition(E start, E end, Command run) {
+    public final void addCommutativeTransition(E start, E end, Command run) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run));
     }
@@ -181,7 +194,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param run1 the command to run between start and end
      * @param run2 the command to run between end and start
      */
-    public void addCommutativeTransition(E start, E end, Command run1, Command run2) {
+    public final void addCommutativeTransition(E start, E end, Command run1, Command run2) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, run1));
         transitionGraph.addEdge(new CommandTransition<>(end, start, run2));
     }
@@ -189,14 +202,14 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     /**
      * @return true if the machine is actively transitioning between states
      */
-    public boolean isTransitioning() {
+    public final boolean isTransitioning() {
         return currentTransition != null;
     }
 
     /**
      * @return the object that returns the current transition information. Will be null if there is no transition
      */
-    public TransitionBase<E> getCurrentTransition() {
+    public final TransitionBase<E> getCurrentTransition() {
         return currentTransition;
     }
 
@@ -204,7 +217,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Request a transition to a state
      * @param state state to transition to
      */
-    public void requestTransition(E state) {
+    public final void requestTransition(E state) {
         TransitionBase<E> transition = transitionGraph.getEdge(currentState, state);
         if(!isTransitioning() && transition != null) {
             currentTransition = transition;
@@ -223,7 +236,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state to go to
      * @param command the command to run upon reaching the state
      */
-    public void requestTransition(E state, Command command) {
+    public final void requestTransition(E state, Command command) {
         stateCommands.put(state, command);
         requestTransition(state);
     }
@@ -233,7 +246,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state to go to
      * @return the command to run
      */
-    public Command transitionCommand(E state) {
+    public final Command transitionCommand(E state) {
         return new FunctionalCommand(() -> requestTransition(state),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
@@ -244,7 +257,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param command the command to run upon reaching that state
      * @return the command to run
      */
-    public Command transitionCommand(E state, Command command) {
+    public final Command transitionCommand(E state, Command command) {
         return new FunctionalCommand(() -> requestTransition(state, command),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
@@ -253,7 +266,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Get the current flags of a state
      * @return the current flags
      */
-    public Set<E> getCurrentFlags() {
+    public final Set<E> getCurrentFlags() {
         return currentFlags;
     }
 
@@ -262,7 +275,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state to evaluate
      * @return whether the state is currently a flag or not
      */
-    public boolean isFlag(E state) {
+    public final boolean isFlag(E state) {
         return getCurrentFlags().contains(state);
     }
 
@@ -270,7 +283,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Add a flag state to the current state
      * @param flag the flag state
      */
-    public void setFlag(E flag) {
+    public final void setFlag(E flag) {
         currentFlags.add(flag);
     }
 
@@ -278,20 +291,20 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * Remove a specific flag state from the list of flags states
      * @param flag the flag state to clear
      */
-    public void clearFlag(E flag) {
+    public final void clearFlag(E flag) {
         currentFlags.remove(flag);
     }
 
     /**
      * Clear all states that are currently flags
      */
-    public void clearFlags() {
+    public final void clearFlags() {
         currentFlags.clear();
     }
 
 
     @Override
-    public void periodic() {
+    public final void periodic() {
         if (enabled) {
             updateTransitioning();
         }
@@ -299,7 +312,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         update();
     }
 
-    protected void setState(E state) {
+    protected final void setState(E state) {
         if (getCurrentCommand() != null) getCurrentCommand().cancel();
         currentState = state;
         clearFlags();
@@ -331,10 +344,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         clearFlags();
     }
 
-    public String toString() {
+    public final String toString() {
         return "Stated Subsystem Machine - " + getName() + "; In State: " + getState().name() + "; In Transition: " + isTransitioning();
     }
-    public void determineState() {
+    public final void determineState() {
         if (!isDetermined()) determineSelf();
     }
     protected void update() {}
@@ -378,5 +391,4 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public Map<String, Sendable> additionalSendables() {
         return new HashMap<>();
     }
-
 }
