@@ -3,28 +3,23 @@ package frc.robot.ShamLib.motors.rev;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxPIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import frc.robot.ShamLib.PIDGains;
 import frc.robot.ShamLib.motors.v5.PIDFGains;
 
-import static com.revrobotics.CANSparkMax.ControlType.kVelocity;
 import static com.revrobotics.SparkMaxAbsoluteEncoder.Type.kDutyCycle;
 import static java.lang.Math.PI;
-import static java.lang.Math.abs;
 
-public class ProfiledSpark extends CANSparkMax implements Sendable {
+public class PositionSpark extends CANSparkMax implements Sendable {
 
     private AbsoluteEncoder absoluteEncoder;
 
-    private ProfiledPIDController localController;
+    // private ProfiledPIDController localController;
 
     private double encoderOffset;
     private SparkMaxPIDController controller;
     private double target = 0;
+    private final double tolerance;
 
     /**
      * Create a new object to control a SPARK MAX motor Controller
@@ -34,12 +29,9 @@ public class ProfiledSpark extends CANSparkMax implements Sendable {
      *                 to their matching colors and the hall sensor must be plugged in. Brushed motors must be
      *                 connected to the Red and Black terminals only.
      * @param gains the PIDF gains to apply to the motor's velocity control
-     * @param localGains gains for the profiled controller to run on the rio
-     * @param maxVel in radians
-     * @param maxAccel in radians
      * @param encoderOffset the offset of the absolute encoder from the desired zero position (in radians)
      */
-    public ProfiledSpark(int deviceId, MotorType type, PIDFGains gains, PIDGains localGains, double maxVel, double maxAccel, double encoderOffset) {
+    public PositionSpark(int deviceId, MotorType type, PIDFGains gains, double encoderOffset, double tolerance) {
         super(deviceId, type);
 
         restoreFactoryDefaults();
@@ -62,26 +54,18 @@ public class ProfiledSpark extends CANSparkMax implements Sendable {
 
         controller.setOutputRange(-1, 1);
 
-        //Instantiate the rio controller
-        this.localController = new ProfiledPIDController(localGains.p, localGains.i, localGains.d,
-                new Constraints(maxVel, maxAccel));
-
-        localController.setTolerance(Math.toDegrees(0.5)); //Radians
+        this.tolerance = tolerance;
 
     }
 
     public void update() {
-        controller.setReference(localController.calculate(getPosition()), kVelocity);
-    }
-
-    public void resetPID() {
-        localController.reset(getPosition(), getVelocity());
+        if(Math.abs(getTarget() - getPosition()) <= tolerance) set(0);
     }
 
     public void setTarget(double target) {
         this.target = target;
 
-        localController.setGoal(target);
+        controller.setReference(target / (2 * PI) + 0.5, ControlType.kPosition);
     }
 
     public double getTarget() {
@@ -108,20 +92,20 @@ public class ProfiledSpark extends CANSparkMax implements Sendable {
         return getAppliedOutput();
     }
 
-    public double getPositionError() {
-        return abs(getPosition() - localController.getSetpoint().position);
-    }
+    // public double getPositionError() {
+        // return abs(getPosition() - localController.getSetpoint().position);
+    // }
 
-    public double getVeloError() {
-        return abs(getVelocity() - localController.getSetpoint().velocity);
-    }
+    // public double getVeloError() {
+        // return abs(getVelocity() - localController.getSetpoint().velocity);
+    // }
 
     @Override
     public void initSendable(SendableBuilder builder) {
         builder.addDoubleProperty("output-power", () -> getMotorOutputPower(), null);
         builder.addDoubleProperty("position", () -> getPosition(), null);
         builder.addDoubleProperty("target", () -> getTarget(), null);
-        builder.addDoubleProperty("position-error", () -> getPositionError(), null);
-        builder.addDoubleProperty("velocity-error", () -> getVeloError(), null);
+        // builder.addDoubleProperty("position-error", () -> getPositionError(), null);
+        // builder.addDoubleProperty("velocity-error", () -> getVeloError(), null);
     }
 }
