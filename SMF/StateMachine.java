@@ -127,12 +127,12 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     /**
-     * Add a state command to run upon reaching that state
+     * Set a state command to run upon reaching that state
      * @param state the state during which the command should run
      * @param command command to run
      */
     public final void registerStateCommand(E state, Command command) {
-        if (!stateCommands.containsKey(state)) stateCommands.put(state, command);
+        stateCommands.put(state, command);
     }
 
     /**
