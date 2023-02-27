@@ -52,7 +52,7 @@ public class PositionSpark extends CANSparkMax implements Sendable {
 
         controller.setFF(gains.getF());
 
-        controller.setOutputRange(-1, 1);
+        controller.setOutputRange(-0.5, 0.5);
 
         this.tolerance = tolerance;
 

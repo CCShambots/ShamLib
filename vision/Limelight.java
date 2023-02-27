@@ -107,6 +107,6 @@ public class Limelight {
 
 
     public void setPipeline(int pipeline) {
-        table.getEntry("pipeline").setInteger(pipeline);
+        table.getEntry("pipeline").setNumber(pipeline);
     }
 }
