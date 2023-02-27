@@ -34,10 +34,10 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         absoluteEncoder = getAbsoluteEncoder(kDutyCycle);
         this.encoderOffset = encoderOffset;
 
-        absoluteEncoder.setPositionConversionFactor(inputToOutputRatio);
+        // absoluteEncoder.setPositionConversionFactor(inputToOutputRatio);
         // absoluteEncoder.setVelocityConversionFactor(inputToOutputRatio);
 
-        absoluteEncoder.setZeroOffset(encoderOffset + Math.PI);
+        absoluteEncoder.setZeroOffset(encoderOffset / (2 * Math.PI) + 0.5 );
 
         controller = getPIDController();
 
@@ -49,15 +49,18 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
         controller.setFF(gains.kFF);
 
         int smartMotionSlot = 0;
-        controller.setSmartMotionMaxVelocity(gains.maxVel / inputToOutputRatio, smartMotionSlot);
-        controller.setSmartMotionMinOutputVelocity(gains.minVel / inputToOutputRatio, smartMotionSlot);
-        controller.setSmartMotionMaxAccel(gains.maxAcc / inputToOutputRatio, smartMotionSlot);
-        controller.setSmartMotionAllowedClosedLoopError(gains.allowedError / inputToOutputRatio, smartMotionSlot);
+        controller.setSmartMotionMaxVelocity(gains.maxVel, smartMotionSlot);
+        controller.setSmartMotionMinOutputVelocity(gains.minVel, smartMotionSlot);
+        controller.setSmartMotionMaxAccel(gains.maxAcc, smartMotionSlot);
+        controller.setSmartMotionAllowedClosedLoopError(gains.allowedError, smartMotionSlot);
+
+        burnFlash();
+
     }
 
     public void setTarget(double target) {
         this.target = target;
-        controller.setReference(this.target - Math.PI, ControlType.kSmartMotion);
+        controller.setReference(this.target / (2 * Math.PI) + 0.5, ControlType.kSmartMotion);
     }
 
     public double getTarget() {
@@ -65,7 +68,7 @@ public class SparkWithAbsoluteControl extends CANSparkMax {
     }
 
     public double getPosition() {
-        return absoluteEncoder.getPosition() - Math.PI;
+        return (absoluteEncoder.getPosition() - 0.5) * 2 * Math.PI;
     }
 
     public double getVelocity() {
