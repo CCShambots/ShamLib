@@ -15,18 +15,26 @@ public class SubsystemManager {
      * @param subsystem subsystem to add to the manager
      */
     public void registerSubsystem(StateMachine<?> subsystem) {
-        registerSubsystem(subsystem, "");
+        registerSubsystem(subsystem, "", true);
+    }
+
+     /** Add a subsystem and its children to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
+     * @param subsystem subsystem to add to the manager
+     * @param sendToNT whether to send the subsystem's information on network tables
+     */
+    public void registerSubsystem(StateMachine<?> subsystem, boolean sendToNT) {
+        registerSubsystem(subsystem, "", sendToNT);
     }
 
 
-    private void registerSubsystem(StateMachine<?> subsystem, String subtable) {
+    private void registerSubsystem(StateMachine<?> subsystem, String subtable, boolean sendToNT) {
         if(!subsystems.contains(subsystem)) {
             subsystems.add(subsystem);
-            sendOnNt(subsystem, subtable);
+            if(sendToNT) sendOnNt(subsystem, subtable);
         }
 
         for (StateMachine<?> machine : subsystem.getChildSubsystems()) {
-            registerSubsystem(machine, subtable + "/" + subsystem.getName());
+            registerSubsystem(machine, subtable + "/" + subsystem.getName(), sendToNT);
         }
     }
 
