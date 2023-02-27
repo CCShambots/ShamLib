@@ -301,7 +301,7 @@ public class SwerveDriveV5 {
         return field;
     }
 
-    public List<SwerveModule> getModules() {
+    public List<SwerveModuleV5> getModules() {
         return modules;
     }
 
