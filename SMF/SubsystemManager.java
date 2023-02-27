@@ -12,13 +12,17 @@ public class SubsystemManager {
 
 
     /**
-     * Add a subsystem to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
+     * Add a subsystem and its children to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
      * @param subsystem subsystem to add to the manager
      */
     public void registerSubsystem(StateMachine<?> subsystem) {
         if(!subsystems.contains(subsystem)) {
             subsystems.add(subsystem);
             sendOnNt(subsystem);
+        }
+
+        for (StateMachine<?> machine : subsystem.getChildSubsystems()) {
+            registerSubsystem(machine);
         }
     }
 
