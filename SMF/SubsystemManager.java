@@ -9,28 +9,36 @@ public class SubsystemManager {
     private final List<StateMachine<?>> subsystems = new ArrayList<>();
 
     SubsystemManager() {}
-
-
+    
     /**
      * Add a subsystem and its children to be tracked by the SubsystemManager instance. It will automatically enable and disable it.
      * @param subsystem subsystem to add to the manager
      */
     public void registerSubsystem(StateMachine<?> subsystem) {
+        registerSubsystem(subsystem, "");
+    }
+
+
+    private void registerSubsystem(StateMachine<?> subsystem, String subtable) {
         if(!subsystems.contains(subsystem)) {
             subsystems.add(subsystem);
-            sendOnNt(subsystem);
+            sendOnNt(subsystem, subtable);
         }
 
         for (StateMachine<?> machine : subsystem.getChildSubsystems()) {
-            registerSubsystem(machine);
+            registerSubsystem(machine, subtable + "/" + subsystem.getName());
         }
     }
 
-    private void sendOnNt(StateMachine<?> subsystem) {
+    private void sendOnNt(StateMachine<?> subsystem, String subtable) {
         SmartDashboard.putData(subsystem.getName(), subsystem);
 
         for(Map.Entry<String, Sendable> entry : subsystem.additionalSendables().entrySet()) {
-            SmartDashboard.putData("/" + subsystem.getName() + "/" + entry.getKey(), entry.getValue());
+            if (subtable != "") {
+                SmartDashboard.putData("/" + subtable + "/" + subsystem.getName() + "/" + entry.getKey(), entry.getValue());
+            } else {
+                SmartDashboard.putData("/" + subsystem.getName() + "/" + entry.getKey(), entry.getValue());
+            }
         }
     }
 
