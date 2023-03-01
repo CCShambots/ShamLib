@@ -2,6 +2,7 @@ package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
 import com.pathplanner.lib.commands.PPSwerveControllerCommand;
@@ -32,6 +33,7 @@ public class SwerveDrive {
     protected final List<SwerveModule> modules;
     protected final SwerveDriveKinematics kDriveKinematics;
     protected final double maxChassisSpeed;
+    protected final double maxChassisAcceleration;
     private int numModules = 0;
     private final WPI_Pigeon2 gyro;
     private double rotationOffset;
@@ -42,7 +44,7 @@ public class SwerveDrive {
 
     private boolean fieldRelative = true;
 
-    private Field2d field;
+    private final Field2d field;
     private final boolean extraTelemetry;
 
     /**
@@ -64,6 +66,7 @@ public class SwerveDrive {
                        PIDSVGains moduleDriveGains,
                        PIDSVGains moduleTurnGains,
                        double maxChassisSpeed,
+                       double maxChassisAccel,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,
                        PIDGains teleThetaGains,
@@ -77,6 +80,7 @@ public class SwerveDrive {
 
         this.extraTelemetry = extraTelemetry;
         this.maxChassisSpeed = maxChassisSpeed;
+        this.maxChassisAcceleration = maxChassisAccel;
 
         //Apply the gains passed in the constructors
         thetaHoldControllerTele =  teleThetaGains.applyToController();
@@ -261,6 +265,14 @@ public class SwerveDrive {
 
     public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, Subsystem... requirements) {
         return getTrajectoryCommand(trajectory, false, requirements);
+    }
+
+    public TrajectoryBuilder getTrajectoryBuilder(PathConstraints constraints) {
+        return new TrajectoryBuilder(getPose(), kDriveKinematics.toChassisSpeeds(getModuleStates()), constraints);
+    }
+
+    public TrajectoryBuilder getTrajectoryBuilder() {
+        return getTrajectoryBuilder(new PathConstraints(this.maxChassisSpeed, this.maxChassisAcceleration));
     }
 
     public Pose2d getPose() {
