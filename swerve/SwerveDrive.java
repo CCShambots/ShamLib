@@ -285,6 +285,7 @@ public class SwerveDrive {
 
     /* RESET COMMANDS FOR DIFFERENT ASPECTS */
 
+    //TODO: Make this play nice with the odometry. Need to test if this is even an issue
     public void resetGyro(Rotation2d angle) {
         gyro.setYaw(angle.getDegrees());
         rotationOffset = 0;
