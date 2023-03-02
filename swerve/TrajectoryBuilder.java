@@ -46,6 +46,12 @@ public class TrajectoryBuilder {
         } else return PathPlanner.generatePath(constraints, points.get(0), points.get(1));
     }
 
+    /**
+     * Run a spline that will keep the bot at the same heading
+     * @param translation translation target
+     * @param endTangent the end tangent of the spline
+     * @return this
+     */
     public TrajectoryBuilder splineToConstantHeading(Translation2d translation, Rotation2d endTangent) {
         points.add(new PathPoint(
                         translation,
@@ -57,7 +63,12 @@ public class TrajectoryBuilder {
         return this;
     }
 
-
+    /**
+     * Run a spline to a specific heading
+     * @param pose the pose target (including holonomic rotation)
+     * @param endTangent the end tangent of the spline
+     * @return this
+     */
     public TrajectoryBuilder splineToHeading(Pose2d pose, Rotation2d endTangent) {
         points.add(new PathPoint(
                         pose.getTranslation(),
