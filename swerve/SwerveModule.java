@@ -154,8 +154,8 @@ public class SwerveModule implements Sendable{
         return turnMotor.calculateKV(kS, 0.05, increment, interrupt);
     }
 
-    public Command calculateDriveKV(double kS, Trigger increment, BooleanSupplier interrupt, boolean telemetry) {
-        return driveMotor.calculateKV(kS, 0.05, increment, interrupt, telemetry);
+    public Command calculateDriveKV(double kS, Trigger increment, Trigger invert, BooleanSupplier interrupt, boolean telemetry) {
+        return driveMotor.calculateKV(kS, 0.05, increment, invert, interrupt, telemetry);
     }
 
 

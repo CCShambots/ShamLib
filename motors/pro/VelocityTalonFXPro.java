@@ -5,8 +5,6 @@ import com.ctre.phoenixpro.controls.VelocityVoltage;
 
 public class VelocityTalonFXPro extends EnhancedTalonFXPro {
 
-    private int kTimeoutMs = 30;
-
     private double target; //In output units
 
     /**

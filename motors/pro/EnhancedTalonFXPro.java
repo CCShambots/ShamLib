@@ -2,19 +2,16 @@ package frc.robot.ShamLib.motors.pro;
 
 import com.ctre.phoenixpro.configs.Slot0Configs;
 import com.ctre.phoenixpro.hardware.TalonFX;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 public class EnhancedTalonFXPro extends TalonFX {
-    private int kTimeoutMs = 30;
-
     private double inputToOutputRatio;
     private double target; //In output units
 
@@ -123,10 +120,11 @@ public class EnhancedTalonFXPro extends TalonFX {
      * @param interrupt supplier to interrupt 
      * @return the command to run
      */
-    public Command calculateKV(double kS, double voltageIncrement, Trigger increment, BooleanSupplier interrupt, boolean telemetry) {
+    public Command calculateKV(double kS, double voltageIncrement, Trigger increment, Trigger reverse, BooleanSupplier interrupt, boolean telemetry) {
 
         AtomicInteger currentMultiple = new AtomicInteger();
-
+        AtomicBoolean invert = new AtomicBoolean(false);
+        reverse.onTrue(new InstantCommand(() -> invert.set(!invert.get())));
         increment.onTrue(new InstantCommand(currentMultiple::getAndIncrement));
 
         return new FunctionalCommand(
@@ -135,11 +133,14 @@ public class EnhancedTalonFXPro extends TalonFX {
                     currentMultiple.set(0);
                 },
                 () -> {
+                    
                     double voltage = kS + currentMultiple.get() * voltageIncrement;
 
-                    setVoltage(kS + currentMultiple.get() * voltageIncrement);
+                    if(invert.get()) voltage *= -1;
 
-                    if(telemetry) System.out.println("(KV) volts: " + (voltage-kS) + ", velocity: " + getVelocity().getValue());
+                    setVoltage(voltage);
+
+                    if(telemetry) System.out.println("(KV) volts: " + ((invert.get() ? -1 : 1) * voltage-kS) + ", velocity: " + getVelocity().getValue());
 
                 },
                 (interrupted) -> {
@@ -150,7 +151,7 @@ public class EnhancedTalonFXPro extends TalonFX {
     }
 
     public Command calculateKV(double kS, double voltageIncrement, Trigger increment, BooleanSupplier interrupt) {
-        return calculateKV(kS, voltageIncrement, increment, interrupt, true);
+        return calculateKV(kS, voltageIncrement, increment, new Trigger(() -> false), interrupt, true);
     }
 
 }

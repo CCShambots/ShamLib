@@ -20,7 +20,7 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
      * @param maxVel maximum velocity the motor should reach
      * @param maxAccel maximum acceleration the motor should undergo
      */
-    public MotionMagicTalonFXPro(int deviceNumber, String canbus, PIDSVGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
+    public MotionMagicTalonFXPro(int deviceNumber, String canbus, PIDSVGains gains, double inputToOutputRatio, double maxVel, double maxAccel, double jerk) {
         super(deviceNumber, canbus, inputToOutputRatio);
 
         TalonFXConfiguration config = new TalonFXConfiguration();
@@ -32,13 +32,16 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
 
         motionMagicConfigs.MotionMagicAcceleration = maxAccel;
         motionMagicConfigs.MotionMagicCruiseVelocity = maxVel;
-        motionMagicConfigs.MotionMagicJerk = 10000;
+        motionMagicConfigs.MotionMagicJerk = jerk;
 
         config.MotionMagic = motionMagicConfigs;
 
         getConfigurator().apply(config);
     }
 
+    public MotionMagicTalonFXPro(int deviceNumber, String canbus, PIDSVGains gains, double inputToOutputRatio, double maxVel, double maxAccel){
+        this(deviceNumber, canbus, gains, inputToOutputRatio, maxVel, maxAccel, 10000);
+    }  
     /**
      * Constructor for a motion magic configured TalonFX
      * @param deviceNumber CAN ID
@@ -59,6 +62,10 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
      */
     public MotionMagicTalonFXPro(int deviceNumber, PIDSVGains gains, double inputToOutputRatio, double maxVel, double maxAccel) {
         this(deviceNumber, "", gains, inputToOutputRatio, maxVel, maxAccel);
+    }
+
+    public MotionMagicTalonFXPro(int deviceNumber, PIDSVGains gains, double inputToOutputRatio, double maxVel, double maxAccel, double jerk) {
+        this(deviceNumber, "", gains, inputToOutputRatio, maxVel, maxAccel, jerk);
     }
 
     /**
