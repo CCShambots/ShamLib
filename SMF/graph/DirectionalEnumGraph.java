@@ -2,7 +2,6 @@ package frc.robot.ShamLib.SMF.graph;
 
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? extends Enum<V>>> {
@@ -24,7 +23,7 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
      */
     public void addEdge(T transition) {
         //TODO: Should we be throwing an exception here or at least returning a boolean of success or not?
-        if (getEdge(fromOrdinal(transition.getStartState().ordinal()), fromOrdinal(transition.getStartState().ordinal())) != null) return;
+        // if (getEdge(fromOrdinal(transition.getStartState().ordinal()), fromOrdinal(transition.getStartState().ordinal())) != null) return;
 
         setEdge(transition);
     }
@@ -50,6 +49,10 @@ public class DirectionalEnumGraph<V extends Enum<V>, T extends TransitionBase<? 
      */
     public void setEdge(T transition) {
         adjacencyMap[transition.getStartState().ordinal()][transition.getEndState().ordinal()] = transition;
+    }
+
+    public void removeEdge(V start, V end) {
+        adjacencyMap[start.ordinal()][end.ordinal()] = null;
     }
 
     /**

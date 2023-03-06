@@ -140,7 +140,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param state the state during which the command should run
      * @param toRun the command to run
      */
-    public final void registerStateCommand(E state, Runnable toRun) {
+    protected final void registerStateCommand(E state, Runnable toRun) {
         registerStateCommand(state, new InstantCommand(toRun));
     }
 
@@ -150,8 +150,20 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      * @param end the end state of the transition
      * @param command the command to run
      */
-    public final void addTransition(E start, E end, Command command) {
+    protected final void addTransition(E start, E end, Command command) {
         transitionGraph.addEdge(new CommandTransition<>(start, end, command));
+    }
+
+    protected final void addTransition(E start, E end) {
+        transitionGraph.addEdge(new CommandTransition<>(start, end, new InstantCommand()));
+    }
+
+    protected final void addTransition(E start, E end, Runnable toRun) {
+        transitionGraph.addEdge(new CommandTransition<>(start, end, new InstantCommand(toRun)));
+    }
+
+    protected final void removeTransition(E start, E end) {
+        transitionGraph.removeEdge(start, end);
     }
 
     /**
