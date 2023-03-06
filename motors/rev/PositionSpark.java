@@ -59,7 +59,7 @@ public class PositionSpark extends CANSparkMax implements Sendable {
     }
 
     public void update() {
-        if(Math.abs(getTarget() - getPosition()) <= tolerance) set(0);
+        // if(Math.abs(getTarget() - getPosition()) <= tolerance) set(0);
     }
 
     public void setTarget(double target) {
