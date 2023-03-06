@@ -3,10 +3,7 @@ package frc.robot.ShamLib.SMF;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
@@ -272,6 +269,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     public final Command transitionCommand(E state, Command command) {
         return new FunctionalCommand(() -> requestTransition(state, command),
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
+    }
+
+    public final Command waitForState(E state) {
+        return new WaitUntilCommand(() -> getState() == state);
     }
 
     /**

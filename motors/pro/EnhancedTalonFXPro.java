@@ -1,7 +1,11 @@
 package frc.robot.ShamLib.motors.pro;
 
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenixpro.configs.MotorOutputConfigs;
 import com.ctre.phoenixpro.configs.Slot0Configs;
 import com.ctre.phoenixpro.hardware.TalonFX;
+import com.ctre.phoenixpro.signals.InvertedValue;
+import com.ctre.phoenixpro.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -10,6 +14,9 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+
+import static com.ctre.phoenixpro.signals.InvertedValue.Clockwise_Positive;
+import static com.ctre.phoenixpro.signals.NeutralModeValue.Brake;
 
 public class EnhancedTalonFXPro extends TalonFX {
     private double inputToOutputRatio;
@@ -35,6 +42,14 @@ public class EnhancedTalonFXPro extends TalonFX {
      */
     public EnhancedTalonFXPro(int deviceNumber, double inputToOutputRatio) {
         this(deviceNumber, "", inputToOutputRatio);
+    }
+
+    public void configure(NeutralModeValue neutralMode, InvertedValue invertedValue) {
+        MotorOutputConfigs config = new MotorOutputConfigs();
+        getConfigurator().refresh(config);
+        config.NeutralMode = neutralMode;
+        config.Inverted = invertedValue;
+        getConfigurator().apply(config);
     }
 
     /**
