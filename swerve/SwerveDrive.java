@@ -117,7 +117,13 @@ public class SwerveDrive {
         field = new Field2d();
     }
 
-        
+    public double getPitch() {
+        return gyro.getPitch();
+    }
+
+    public double getRoll() {
+        return gyro.getRoll();
+    }
 
     public void addVisionMeasurement(Pose2d pose) {
         if (extraTelemetry) field.getObject("vision").setPose(pose);
