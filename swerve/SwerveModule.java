@@ -1,5 +1,9 @@
 package frc.robot.ShamLib.swerve;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
@@ -12,11 +16,16 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.pro.PIDSVGains;
 import frc.robot.ShamLib.motors.pro.MotionMagicTalonFXPro;
 import frc.robot.ShamLib.motors.pro.VelocityTalonFXPro;
+
+import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_DIFF;
 
 public class SwerveModule implements Sendable{
 
@@ -66,16 +75,12 @@ public class SwerveModule implements Sendable{
 
         turnMotor = new MotionMagicTalonFXPro(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(turnInverted); //All turn modules were inverted
-//        turnMotor.configNeutralDeadband(0.01);
-        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
-//        turnMotor.configSupplyCurrentLimit(currentLimit);
+        pullAbsoluteAngle();
 
         //TODO: Figure out current limiting
 
         driveMotor = new VelocityTalonFXPro(driveID, canbus, driveGains, driveRatio);
         driveMotor.setInverted(driveInverted);
-
-//        driveMotor.configSupplyCurrentLimit(currentLimit);
 
         setDesiredState(
             new SwerveModuleState(0, getTurnAngle())
@@ -101,9 +106,6 @@ public class SwerveModule implements Sendable{
         this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted);
     }
 
-    public double getAbsoluteAngle() {
-        return turnEncoder.getAbsolutePosition();
-    }
 
     private double normalizeDegrees(double degrees) {
         return Math.IEEEremainder(degrees, 360);
@@ -118,10 +120,6 @@ public class SwerveModule implements Sendable{
         turnMotor.setTarget(targetModuleAngle);
 
         driveMotor.setTarget(targetState.speedMetersPerSecond);
-    }
-
-    public Rotation2d getTurnAngle(){
-        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getEncoderPosition()));
     }
 
     public double getDriveMotorRate(){
@@ -158,6 +156,36 @@ public class SwerveModule implements Sendable{
         return driveMotor.calculateKV(kS, 0.05, increment, invert, interrupt, telemetry);
     }
 
+    public Rotation2d getAbsoluteAngle() {
+        return Rotation2d.fromDegrees(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+    }
+
+    public void pullAbsoluteAngle() {
+        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+    }
+
+    public void resetAngle(Rotation2d angle) {
+        turnMotor.resetPosition(angle.getDegrees());
+    }
+
+    public Rotation2d getTurnAngle(){
+        return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getEncoderPosition()));
+    }
+
+    /**
+     * @return the error of the motor position vs the absolute encoder position (in degrees)
+     */
+    public double getAbsoluteError() {
+        return Math.abs(getAbsoluteAngle().minus(getTurnAngle()).getDegrees());
+    }
+
+    public boolean isModuleMisaligned() {
+        return getAbsoluteError() > ShamLibConstants.Swerve.ALLOWED_MODULE_ERROR;
+    }
+
+    public Command realignModule() {
+        return new RealignModuleCommand(this);
+    }
 
     @Override
     public void initSendable(SendableBuilder builder) {

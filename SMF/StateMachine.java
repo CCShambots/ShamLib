@@ -10,7 +10,7 @@ import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 
 import java.util.*;
 
-import static frc.robot.ShamLib.SMFConstants.SMF.transitionTimeout;
+import static frc.robot.ShamLib.ShamLibConstants.SMF.transitionTimeout;
 
 public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
