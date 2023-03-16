@@ -185,6 +185,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         addOmniTransition(state, new InstantCommand(run));
     }
 
+    public final void addOmniTransition(E state) {
+        addOmniTransition(state, () -> {});
+    }
+
     /**
      * Add a transition both ways between two states
      * @param start beginning state
