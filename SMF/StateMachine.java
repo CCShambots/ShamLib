@@ -330,7 +330,13 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     protected final void setState(E state) {
-        if (getCurrentCommand() != null) getCurrentCommand().cancel();
+        //if (getCurrentCommand() != null) getCurrentCommand().cancel();
+
+        if (stateCommands.containsKey(getState())) {
+            Command prevCommand = stateCommands.get(getState());
+            if (prevCommand.isScheduled()) prevCommand.cancel();
+        }
+
         currentState = state;
         clearFlags();
         if (stateCommands.containsKey(state)) {
