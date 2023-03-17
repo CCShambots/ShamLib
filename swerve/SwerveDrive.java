@@ -46,6 +46,8 @@ public class SwerveDrive {
     private final Field2d field;
     private final boolean extraTelemetry;
 
+    private int speedMode = 0;
+
     /**
      * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
      * @param pigeon2ID CAN idea of the pigeon 2 gyro
@@ -297,6 +299,18 @@ public class SwerveDrive {
     public void setHoldAngle(Rotation2d angle) {
         holdAngle = angle;
         thetaHoldControllerTele.setSetpoint(angle.getRadians());
+    }
+
+    public ChassisSpeeds getChassisSpeeds() {
+        return kDriveKinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    public int getSpeedMode() {
+        return speedMode;
+    }
+
+    public void setSpeedMode(int speedMode) {
+        this.speedMode = speedMode;
     }
 
     /* RESET COMMANDS FOR DIFFERENT ASPECTS */
