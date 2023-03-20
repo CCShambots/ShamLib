@@ -17,7 +17,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
@@ -46,6 +45,8 @@ public class SwerveDrive {
 
     private final Field2d field;
     private final boolean extraTelemetry;
+
+    private int speedMode = 0;
 
     /**
      * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
@@ -150,6 +151,16 @@ public class SwerveDrive {
         return states;
     }
 
+    public SwerveModuleState[] getTargetModuleStates() {
+        SwerveModuleState[] states = new SwerveModuleState[numModules];
+
+        for(int i = 0; i < modules.size(); i++) {
+            states[i] = modules.get(i).getTargetState();
+        }
+
+        return states;
+    }
+
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] positions = new SwerveModulePosition[numModules];
 
@@ -200,7 +211,6 @@ public class SwerveDrive {
      */
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
 
-        SmartDashboard.putString("chassis-speeds", speeds.toString());
         if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
             speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
             if(Math.abs(Math.toDegrees(speeds.omegaRadiansPerSecond)) < 4) {
@@ -299,6 +309,22 @@ public class SwerveDrive {
     public void setHoldAngle(Rotation2d angle) {
         holdAngle = angle;
         thetaHoldControllerTele.setSetpoint(angle.getRadians());
+    }
+
+    public ChassisSpeeds getChassisSpeeds() {
+        return kDriveKinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    public ChassisSpeeds getTargetChassisSpeeds() {
+        return kDriveKinematics.toChassisSpeeds();
+    }
+
+    public int getSpeedMode() {
+        return speedMode;
+    }
+
+    public void setSpeedMode(int speedMode) {
+        this.speedMode = speedMode;
     }
 
     /* RESET COMMANDS FOR DIFFERENT ASPECTS */

@@ -185,6 +185,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         addOmniTransition(state, new InstantCommand(run));
     }
 
+    public final void addOmniTransition(E state) {
+        addOmniTransition(state, () -> {});
+    }
+
     /**
      * Add a transition both ways between two states
      * @param start beginning state
@@ -230,6 +234,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         TransitionBase<E> transition = transitionGraph.getEdge(currentState, state);
         if(!isTransitioning() && transition != null) {
             currentTransition = transition;
+            cancelStateCommand();
             transition.execute();
             transitionTimer.start();
 
@@ -238,6 +243,13 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
             queuedTransition = transition;
         }
 
+    }
+
+    private void cancelStateCommand() {
+        if (stateCommands.containsKey(getState())) {
+            Command prevCommand = stateCommands.get(getState());
+            if (prevCommand.isScheduled()) prevCommand.cancel();
+        }
     }
 
     /**
@@ -326,7 +338,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     }
 
     protected final void setState(E state) {
-        if (getCurrentCommand() != null) getCurrentCommand().cancel();
+        cancelStateCommand();
+
         currentState = state;
         clearFlags();
         if (stateCommands.containsKey(state)) {
