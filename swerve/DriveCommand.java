@@ -119,9 +119,9 @@ public class DriveCommand extends CommandBase{
     }
 
     private void resetSpeedLimiters() {
-        ChassisSpeeds speeds = drivetrain.getChassisSpeeds();
-        xLimiters.forEach((e) -> e.reset(speeds.vxMetersPerSecond));
-        yLimiters.forEach((e) -> e.reset(speeds.vyMetersPerSecond));
-        thetaLimiters.forEach((e) -> e.reset(speeds.omegaRadiansPerSecond));
+        ChassisSpeeds currentSpeeds = drivetrain.getChassisSpeeds();
+        xLimiters.forEach((e) -> e.reset(currentSpeeds.vxMetersPerSecond));
+        yLimiters.forEach((e) -> e.reset(currentSpeeds.vyMetersPerSecond));
+        thetaLimiters.forEach((e) -> e.reset(currentSpeeds.omegaRadiansPerSecond));
     }
 }

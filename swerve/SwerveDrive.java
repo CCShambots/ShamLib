@@ -2,6 +2,7 @@ package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
@@ -76,7 +77,7 @@ public class SwerveDrive {
                        boolean extraTelemetry,
                        String moduleCanbus,
                        String gyroCanbus,
-                       SupplyCurrentLimitConfiguration currentLimit,
+                       CurrentLimitsConfigs currentLimit,
                        ModuleInfo... moduleInfos) {
 
         this.extraTelemetry = extraTelemetry;
@@ -100,7 +101,7 @@ public class SwerveDrive {
             offsets[i] = m.offset;
 
             modules.add(new SwerveModule("Module-" + numModules, moduleCanbus, m.turnMotorID, m.driveMotorID,
-                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted));
+                    m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted, extraTelemetry));
         }
 
         gyro.configFactoryDefault();

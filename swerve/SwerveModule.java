@@ -6,6 +6,9 @@ import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
+import com.ctre.phoenixpro.configs.TalonFXConfiguration;
+import com.ctre.phoenixpro.hardware.TalonFX;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -28,6 +31,8 @@ public class SwerveModule implements Sendable{
     private final CANCoder turnEncoder;
     private double encoderOffset;
 
+    private final boolean extraTelemetry;
+
     private SwerveModuleState targetState;
 
     private double targetModuleAngle;
@@ -47,13 +52,16 @@ public class SwerveModule implements Sendable{
                         double maxTurnAccel,
                         double turnRatio,
                         double driveRatio,
-                        SupplyCurrentLimitConfiguration currentLimit,
+                        CurrentLimitsConfigs currentLimit,
                         boolean driveInverted,
-                        boolean turnInverted
+                        boolean turnInverted,
+                        boolean extraTelemetry
     ) {
         this.moduleOffset = moduleOffset;
         
         this.moduleName = name;
+
+        this.extraTelemetry = extraTelemetry;
 
         this.turnEncoder = new CANCoder(encoderID, canbus);
         turnEncoder.configFactoryDefault();
@@ -66,16 +74,12 @@ public class SwerveModule implements Sendable{
 
         turnMotor = new MotionMagicTalonFXPro(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(turnInverted); //All turn modules were inverted
-//        turnMotor.configNeutralDeadband(0.01);
         turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
-//        turnMotor.configSupplyCurrentLimit(currentLimit);
-
-        //TODO: Figure out current limiting
+        applyCurrentLimit(turnMotor, currentLimit);
 
         driveMotor = new VelocityTalonFXPro(driveID, canbus, driveGains, driveRatio);
         driveMotor.setInverted(driveInverted);
-
-//        driveMotor.configSupplyCurrentLimit(currentLimit);
+        applyCurrentLimit(driveMotor, currentLimit);
 
         setDesiredState(
             new SwerveModuleState(0, getTurnAngle())
@@ -94,11 +98,19 @@ public class SwerveModule implements Sendable{
                         double maxTurnAccel,
                         double turnRatio,
                         double driveRatio,
-                        SupplyCurrentLimitConfiguration currentLimit,
+                        CurrentLimitsConfigs currentLimit,
                         boolean driveInverted,
-                        boolean turnInverted
+                        boolean turnInverted,
+                        boolean extraTelemetry
     ) {
-        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted);
+        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted, extraTelemetry);
+    }
+
+    private void applyCurrentLimit(TalonFX motor, CurrentLimitsConfigs limit) {
+        TalonFXConfiguration config = new TalonFXConfiguration();
+        motor.getConfigurator().refresh(config);
+        config.CurrentLimits = limit;
+        motor.getConfigurator().apply(config);
     }
 
     public double getAbsoluteAngle() {
@@ -165,11 +177,8 @@ public class SwerveModule implements Sendable{
 
         builder.addDoubleProperty("Angle", () -> getTurnAngle().getDegrees(), null);
         builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset), null);
-        // builder.addDoubleProperty("Degree Angle (motor)", () -> turnMotor.getPosition(), null);
-        // builder.addDoubleProperty("Raw Angle (motor)", () -> turnMotor.getSelectedSensorPosition(), null);
         builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getTarget(), null);
         builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getEncoderPosition()), null);
-        // builder.addDoubleProperty("Absolute Angle", () -> turnEncoder.getAbsolutePosition(), null);
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
         builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
         builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);
