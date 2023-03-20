@@ -136,6 +136,10 @@ public class SwerveModule implements Sendable{
         return new SwerveModuleState(getDriveMotorRate(), getTurnAngle());
     }
 
+    public SwerveModuleState getTargetState() {
+        return targetState;
+    }
+
     public SwerveModulePosition getCurrentPosition() {
         return new SwerveModulePosition(getDriveMotorPosition(), getTurnAngle());
     }

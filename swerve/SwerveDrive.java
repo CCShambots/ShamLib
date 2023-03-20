@@ -151,6 +151,16 @@ public class SwerveDrive {
         return states;
     }
 
+    public SwerveModuleState[] getTargetModuleStates() {
+        SwerveModuleState[] states = new SwerveModuleState[numModules];
+
+        for(int i = 0; i < modules.size(); i++) {
+            states[i] = modules.get(i).getTargetState();
+        }
+
+        return states;
+    }
+
     public SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] positions = new SwerveModulePosition[numModules];
 
@@ -303,6 +313,10 @@ public class SwerveDrive {
 
     public ChassisSpeeds getChassisSpeeds() {
         return kDriveKinematics.toChassisSpeeds(getModuleStates());
+    }
+
+    public ChassisSpeeds getTargetChassisSpeeds() {
+        return kDriveKinematics.toChassisSpeeds()
     }
 
     public int getSpeedMode() {
