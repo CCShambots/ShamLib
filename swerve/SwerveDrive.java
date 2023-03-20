@@ -316,7 +316,7 @@ public class SwerveDrive {
     }
 
     public ChassisSpeeds getTargetChassisSpeeds() {
-        return kDriveKinematics.toChassisSpeeds()
+        return kDriveKinematics.toChassisSpeeds();
     }
 
     public int getSpeedMode() {
