@@ -4,7 +4,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.SMF.StateMachine;
-import frc.robot.ShamLib.SMFConstants;
+import frc.robot.ShamLib.ShamLibConstants;
 import org.junit.jupiter.api.*;
 
 public class StateMachineTesting {
@@ -87,7 +87,7 @@ public class StateMachineTesting {
         assert stateMachine.getCurrentTransition().getEndState() != ExampleState.D;
 
         t.start();
-        while (!t.hasElapsed(SMFConstants.SMF.transitionTimeout + 0.1)) stepCommandScheduler(1);
+        while (!t.hasElapsed(ShamLibConstants.SMF.transitionTimeout + 0.1)) stepCommandScheduler(1);
         t.stop();
 
 

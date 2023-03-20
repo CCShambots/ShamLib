@@ -191,7 +191,7 @@ public class SwerveDrive {
         double[] out = new double[4];
 
         for (int i = 0; i < modules.size(); i++) {
-            out[i] = modules.get(i).getAbsoluteAngle();
+            out[i] = modules.get(i).getAbsoluteAngle().getDegrees();
         }
 
         return out;
