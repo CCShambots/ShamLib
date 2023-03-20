@@ -176,6 +176,10 @@ public class SwerveModule implements Sendable{
         return Rotation2d.fromDegrees(normalizeDegrees(turnMotor.getEncoderPosition()));
     }
 
+    public double getTurnMotorVelo() {
+        return turnMotor.getEncoderVelocity();
+    }
+
     /**
      * @return the error of the motor position vs the absolute encoder position (in degrees)
      */

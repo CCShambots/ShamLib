@@ -81,6 +81,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         onEnable();
     }
 
+    public final boolean isEnabled() {
+        return enabled;
+    }
+
     /**
      * User-implemented method run immediately on the machine being enabled
      */

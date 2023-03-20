@@ -12,7 +12,7 @@ import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_D
 public class RealignModuleCommand extends CommandBase {
 
     List<Double> positionList = new ArrayList<>();
-    double minValue = 0;
+    double minAbsoluteValue = 0;
 
     Timer timer = new Timer();
     boolean finished = false;
@@ -27,7 +27,7 @@ public class RealignModuleCommand extends CommandBase {
     public void initialize() {
         System.out.println("Irregularity detected on module " + module.getModuleName());
         positionList.clear();
-        minValue = module.getAbsoluteAngle().getDegrees();
+        minAbsoluteValue = module.getAbsoluteAngle().getDegrees();
         timer.reset();
         timer.start();
     }
@@ -38,20 +38,24 @@ public class RealignModuleCommand extends CommandBase {
 
         positionList.add(thisValue);
 
-        if(Math.abs(thisValue - minValue) > ALLOWED_STOPPED_MODULE_DIFF){
+        if(Math.abs(thisValue - minAbsoluteValue) > ALLOWED_STOPPED_MODULE_DIFF || 
+            Math.abs(module.getDriveMotorRate()) > 0.1 || 
+            Math.abs(module.getTurnMotorVelo()) > 0.1){
             System.out.println("FAILED TO CORRECT MODULE IRREGULARITY");
-            finished = true;
+            cancel();
         }
 
         if(timer.get() > 1) finished = true;
 
-        if(thisValue < minValue) minValue = thisValue;
+        if(thisValue < minAbsoluteValue) minAbsoluteValue = thisValue;
     }
 
     @Override
     public void end(boolean interrupted) {
         if(!interrupted) {
             double average = positionList.stream().mapToDouble((e) -> e).average().orElse(0);
+
+            System.out.println("CORRECTED " + module.getModuleName() + " TO: " + average + " from " + module.getDriveMotorPosition());
 
             module.resetAngle(Rotation2d.fromDegrees(average));
         }
@@ -63,4 +67,11 @@ public class RealignModuleCommand extends CommandBase {
     public boolean isFinished() {
         return finished;
     }
+
+    @Override
+    public boolean runsWhenDisabled() {
+        return true;
+    }
+
+    
 }
