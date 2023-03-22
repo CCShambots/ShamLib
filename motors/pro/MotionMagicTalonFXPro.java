@@ -4,8 +4,6 @@ import com.ctre.phoenixpro.configs.MotionMagicConfigs;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.controls.MotionMagicVoltage;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
 public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
     private int kTimeoutMs = 30;
 
@@ -94,6 +92,21 @@ public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
      */
     public double getTarget() {
         return target;
+    }
+
+    public void changeSpeed(double maxVelo, double maxAccel, double maxJerk) {
+        TalonFXConfiguration config = new TalonFXConfiguration();
+        getConfigurator().refresh(config);
+
+        config.MotionMagic.MotionMagicAcceleration = maxAccel;
+        config.MotionMagic.MotionMagicCruiseVelocity = maxVelo;
+        config.MotionMagic.MotionMagicJerk = maxJerk;
+
+        getConfigurator().apply(config);
+    }
+
+    public void changeSpeed(double maxVelo, double maxAccel) {
+        changeSpeed(maxVelo, maxAccel, 10000);
     }
 
 }
