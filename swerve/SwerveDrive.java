@@ -225,6 +225,10 @@ public class SwerveDrive {
         setModuleStates(swerveModuleStates);
     }
 
+    public void fixHoldAngle() {
+        setHoldAngle(getCurrentAngle());
+    }
+
     /**
      * Sets the target state of each swerve module based on the input array
      * @param states array of swerve module states
