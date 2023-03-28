@@ -192,7 +192,7 @@ public class SwerveDrive {
         double[] out = new double[4];
 
         for (int i = 0; i < modules.size(); i++) {
-            out[i] = modules.get(i).getAbsoluteAngle();
+            out[i] = modules.get(i).getAbsoluteAngle().getDegrees();
         }
 
         return out;
@@ -224,6 +224,10 @@ public class SwerveDrive {
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
 
         setModuleStates(swerveModuleStates);
+    }
+
+    public void fixHoldAngle() {
+        setHoldAngle(getCurrentAngle());
     }
 
     /**
@@ -317,7 +321,7 @@ public class SwerveDrive {
     }
 
     public ChassisSpeeds getTargetChassisSpeeds() {
-        return kDriveKinematics.toChassisSpeeds()
+        return kDriveKinematics.toChassisSpeeds();
     }
 
     public int getSpeedMode() {
