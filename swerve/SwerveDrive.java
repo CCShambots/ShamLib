@@ -210,7 +210,7 @@ public class SwerveDrive {
      * @param speeds chassis speed object to move
      * @param allowHoldAngleChange whether the hold angle of the robot should change
      */
-    public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
+    public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange, double maxChassisSpeed) {
 
         if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
             speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
@@ -224,6 +224,10 @@ public class SwerveDrive {
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
 
         setModuleStates(swerveModuleStates);
+    }
+
+    public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
+        drive(speeds, allowHoldAngleChange, maxChassisSpeed);
     }
 
     public void fixHoldAngle() {
@@ -321,7 +325,7 @@ public class SwerveDrive {
     }
 
     public ChassisSpeeds getTargetChassisSpeeds() {
-        return kDriveKinematics.toChassisSpeeds();
+        return kDriveKinematics.toChassisSpeeds(getTargetModuleStates());
     }
 
     public int getSpeedMode() {

@@ -46,8 +46,8 @@ public class DriveCommand extends CommandBase{
         this.turnSupplier = turnSupplier;
 
         for(SwerveSpeedLimits l : speedLimits) {
-            xLimiters.add(new SlewRateLimiter(l.getMaxSpeed()));
-            yLimiters.add(new SlewRateLimiter(l.getMaxSpeed()));
+            xLimiters.add(new SlewRateLimiter(l.getMaxAcceleration()));
+            yLimiters.add(new SlewRateLimiter(l.getMaxAcceleration()));
             thetaLimiters.add(new SlewRateLimiter(l.getMaxRotationalAcceleration()));
 
             maxLinearSpeeds.add(l.getMaxSpeed());
@@ -96,7 +96,7 @@ public class DriveCommand extends CommandBase{
         speeds.vyMetersPerSecond = yLimiters.get(currentSpeedMode).calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = thetaLimiters.get(currentSpeedMode).calculate(speeds.omegaRadiansPerSecond);
 
-        drivetrain.drive(speeds, useTurning);
+        drivetrain.drive(speeds, useTurning, maxLinearSpeeds.get(currentSpeedMode));
 
         prevSpeedMode = currentSpeedMode;
     }
