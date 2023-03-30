@@ -11,8 +11,11 @@ import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
+import com.ctre.phoenixpro.configs.MotorOutputConfigs;
 import com.ctre.phoenixpro.configs.TalonFXConfiguration;
 import com.ctre.phoenixpro.hardware.TalonFX;
+import com.ctre.phoenixpro.signals.NeutralModeValue;
+
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -88,6 +91,11 @@ public class SwerveModule implements Sendable{
         driveMotor = new VelocityTalonFXPro(driveID, canbus, driveGains, driveRatio);
         driveMotor.setInverted(driveInverted);
         applyCurrentLimit(driveMotor, currentLimit);
+
+        MotorOutputConfigs configs = new MotorOutputConfigs();
+        driveMotor.getConfigurator().refresh(configs);
+        configs.NeutralMode = NeutralModeValue.Brake;
+        driveMotor.getConfigurator().apply(configs);
         
         pullAbsoluteAngle();
 
