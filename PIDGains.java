@@ -3,9 +3,9 @@ package frc.robot.ShamLib;
 import edu.wpi.first.math.controller.PIDController;
 
 public class PIDGains {
-    public final double p;
-    public final double i;
-    public final double d;
+    public double p;
+    public double i;
+    public double d;
 
     public PIDGains(double p, double i, double d) {
         this.p = p;
