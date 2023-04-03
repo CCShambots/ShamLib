@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 
 public class EnhancedTalonFXV5 extends WPI_TalonFX {
-    private int kTimeoutMs = 30;
+    private final int kTimeoutMs = 30;
 
-    private double inputToOutputRatio;
+    private final double inputToOutputRatio;
     private double target; //In output units
 
     /**

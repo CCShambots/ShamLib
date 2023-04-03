@@ -9,20 +9,22 @@ import java.util.function.DoubleSupplier;
 import java.util.function.UnaryOperator;
 
 public class DriveCommandV5 extends CommandBase{
-    private SwerveDriveV5 drivetrain;
-    private DoubleSupplier xSupplier;
-    private DoubleSupplier ySupplier;
-    private DoubleSupplier turnSupplier;
+    private final SwerveDriveV5 drivetrain;
+    private final DoubleSupplier xSupplier;
+    private final DoubleSupplier ySupplier;
+    private final DoubleSupplier turnSupplier;
 
-    private SlewRateLimiter xLimiter, yLimiter, thetaLimiter;
+    private final SlewRateLimiter xLimiter;
+    private final SlewRateLimiter yLimiter;
+    private final SlewRateLimiter thetaLimiter;
 
-    private double maxLinearSpeed;
-    private double maxRotationalSpeed;
+    private final double maxLinearSpeed;
+    private final double maxRotationalSpeed;
 
-    private double deadband;
-    private UnaryOperator<Double> controllerConversion;
+    private final double deadband;
+    private final UnaryOperator<Double> controllerConversion;
 
-    private boolean useTurning;
+    private final boolean useTurning;
 
     public DriveCommandV5(SwerveDriveV5 drivetrain,
                           DoubleSupplier xSupplier,

@@ -1,10 +1,10 @@
 package frc.robot.ShamLib.swerve;
 
 public class SwerveSpeedLimits {
-    private double maxSpeed;
-    private double maxAcceleration;
-    private double maxRotationalSpeed;
-    private double maxRotationalAcceleration;
+    private final double maxSpeed;
+    private final double maxAcceleration;
+    private final double maxRotationalSpeed;
+    private final double maxRotationalAcceleration;
 
     /**
      * Represents the speed limits that a swerve drive can follow

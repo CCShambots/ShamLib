@@ -27,6 +27,7 @@ public class CANdleEX extends CANdle {
         configAll.brightnessScalar = brightness;
         configAll.vBatOutputMode = VBatOutputMode.Modulated;
         configAllSettings(configAll, 100);
+
     }
 
     public int getLedCount() {
@@ -38,6 +39,15 @@ public class CANdleEX extends CANdle {
     public void setLEDs(RGB values) {
         clearAnimation(0);
         setLEDs(values.R, values.G, values.B);
-    
     }
+
+    public void setLEDs(MultipleColorSegments segs) {
+        clearAnimation(0);
+        for(MultipleColorSegments.ColorSegmentInfo info : segs.colorSegmentInfoList) {
+            RGB rgb = info.rgb;
+            setLEDs(rgb.R, rgb.G, rgb.B, 0, info.numLEDs, info.startLED);
+        }
+    }
+
+
 }

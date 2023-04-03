@@ -6,8 +6,8 @@ import edu.wpi.first.wpilibj.DutyCycle;
 import static java.lang.Math.PI;
 
 public class ThroughBoreEncoder {
-    private DutyCycle cycle;
-    private double offset;
+    private final DutyCycle cycle;
+    private final double offset;
     private boolean invert = false;
 
     public ThroughBoreEncoder(int port, double offsetDegrees) {

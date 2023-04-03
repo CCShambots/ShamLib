@@ -11,10 +11,10 @@ import static java.lang.Math.PI;
 
 public class Limelight {
 
-    private NetworkTable table;
+    private final NetworkTable table;
 
-    private Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
-    private String[] defaultElementOutput = new String[]{"none"};
+    private final Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
+    private final String[] defaultElementOutput = new String[]{"none"};
 
     /**
      * Creates a limelight object

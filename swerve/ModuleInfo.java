@@ -15,19 +15,19 @@ public class ModuleInfo {
     final boolean turnInverted;
 
     //TODO: Properly support both phoenix pro and phoenix V5
-    private static double mk3TurnRatio  =
+    private static final double mk3TurnRatio  =
             (1.0 / 2048) *
             (1.0 / 12.8) * //
             360
     ;
 
-    private static double mk4iTurnRatio =
+    private static final double mk4iTurnRatio =
 //        (1.0 / 2048) * //Motor revs
         (7.0 / 150.0) * //Output revs
         360 //Output degrees
     ;
 
-    private static double mk4iWheelCircumference =
+    private static final double mk4iWheelCircumference =
             2 * Math.PI * 0.0508;
 
     public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset,

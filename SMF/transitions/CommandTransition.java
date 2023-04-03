@@ -6,7 +6,7 @@ import java.util.function.BooleanSupplier;
 import edu.wpi.first.wpilibj2.command.Command;
 
 public class CommandTransition<E extends Enum<E>> extends TransitionBase<E> {
-    private Command command;
+    private final Command command;
 
     public CommandTransition(E startState, E endState, Command command) {
         super(startState, endState);

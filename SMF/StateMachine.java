@@ -23,8 +23,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     private final E undeterminedState;
     private E currentState;
     private boolean enabled;
-    private Class<E> enumType;
-    private List<StateMachine<?>> subsystems;
+    private final Class<E> enumType;
+    private final List<StateMachine<?>> subsystems;
 
     /**
      * Instantiate a new State Machine

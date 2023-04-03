@@ -5,7 +5,7 @@ import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.motorcontrol.TalonFXFeedbackDevice;
 
 public class MotionMagicTalonFXV5 extends EnhancedTalonFXV5 {
-    private int kTimeoutMs = 30;
+    private final int kTimeoutMs = 30;
 
     private double target; //In output units
 

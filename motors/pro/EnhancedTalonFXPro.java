@@ -19,7 +19,7 @@ import static com.ctre.phoenixpro.signals.InvertedValue.Clockwise_Positive;
 import static com.ctre.phoenixpro.signals.NeutralModeValue.Brake;
 
 public class EnhancedTalonFXPro extends TalonFX {
-    private double inputToOutputRatio;
+    private final double inputToOutputRatio;
     private double target; //In output units
 
     /**

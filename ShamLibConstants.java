@@ -3,7 +3,7 @@ package frc.robot.ShamLib;
 public class ShamLibConstants {
 
     public static class SMF {
-        public static double transitionTimeout = 2; //seconds
+        public static final double transitionTimeout = 2; //seconds
     }
 
     public static class Swerve {
