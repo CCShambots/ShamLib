@@ -14,7 +14,7 @@ public class Limelight {
     private NetworkTable table;
 
     private Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
-    private Double[] defaultConeAngle = new Double[]{0.};
+    private String[] defaultElementOutput = new String[]{"none"};
 
     /**
      * Creates a limelight object
@@ -91,18 +91,11 @@ public class Limelight {
 
         Double[] botPose = table.getEntry("botpose").getDoubleArray(defaultPose);
 
-        Pose3d pose = new Pose3d(botPose[0]+8.2296, botPose[1]+4.1148, botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
-
-        return pose;
+        return new Pose3d(botPose[0]+8.2296, botPose[1]+4.1148, botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
     }
 
-    /**
-     * Get the rotation of a knocked-over cone when it is detected by the limelight
-     */
-    public Rotation2d getConeAngle() {
-        double value = table.getEntry("llpython").getDoubleArray(defaultConeAngle)[0];
-        double corrected = IEEEremainder(value, PI * 2);
-        return new Rotation2d(corrected);
+    public String getCurrentElement() {
+        return table.getEntry("llpython").getStringArray(defaultElementOutput)[0];
     }
 
 
