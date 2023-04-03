@@ -11,13 +11,13 @@ import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_D
 
 public class RealignModuleCommand extends CommandBase {
 
-    List<Double> positionList = new ArrayList<>();
+    final List<Double> positionList = new ArrayList<>();
     double minAbsoluteValue = 0;
 
-    Timer timer = new Timer();
+    final Timer timer = new Timer();
     boolean finished = false;
 
-    SwerveModule module;
+    final SwerveModule module;
 
     public RealignModuleCommand(SwerveModule module) {
         this.module = module;

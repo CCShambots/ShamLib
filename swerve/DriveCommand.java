@@ -11,22 +11,22 @@ import java.util.function.DoubleSupplier;
 import java.util.function.UnaryOperator;
 
 public class DriveCommand extends CommandBase{
-    private SwerveDrive drivetrain;
-    private DoubleSupplier xSupplier;
-    private DoubleSupplier ySupplier;
-    private DoubleSupplier turnSupplier;
+    private final SwerveDrive drivetrain;
+    private final DoubleSupplier xSupplier;
+    private final DoubleSupplier ySupplier;
+    private final DoubleSupplier turnSupplier;
 
-    private List<SlewRateLimiter> xLimiters = new ArrayList<>();
-    private List<SlewRateLimiter> yLimiters = new ArrayList<>();
-    private List<SlewRateLimiter> thetaLimiters = new ArrayList<>();
+    private final List<SlewRateLimiter> xLimiters = new ArrayList<>();
+    private final List<SlewRateLimiter> yLimiters = new ArrayList<>();
+    private final List<SlewRateLimiter> thetaLimiters = new ArrayList<>();
 
-    private List<Double> maxLinearSpeeds = new ArrayList<>();
-    private List<Double> maxRotationalSpeeds = new ArrayList<>();
+    private final List<Double> maxLinearSpeeds = new ArrayList<>();
+    private final List<Double> maxRotationalSpeeds = new ArrayList<>();
 
-    private double deadband;
-    private UnaryOperator<Double> controllerConversion;
+    private final double deadband;
+    private final UnaryOperator<Double> controllerConversion;
 
-    private boolean useTurning;
+    private final boolean useTurning;
 
     private int prevSpeedMode;
 

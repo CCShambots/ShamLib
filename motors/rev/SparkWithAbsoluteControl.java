@@ -8,10 +8,10 @@ import static com.revrobotics.SparkMaxAbsoluteEncoder.Type.kDutyCycle;
 
 public class SparkWithAbsoluteControl extends CANSparkMax {
 
-    private AbsoluteEncoder absoluteEncoder;
-    private double encoderOffset;
+    private final AbsoluteEncoder absoluteEncoder;
+    private final double encoderOffset;
     private double inputToOutputRatio;
-    private SparkMaxPIDController controller;
+    private final SparkMaxPIDController controller;
     private double target = 0;
 
     /**

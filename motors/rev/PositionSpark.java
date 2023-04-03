@@ -12,12 +12,12 @@ import static java.lang.Math.PI;
 
 public class PositionSpark extends CANSparkMax implements Sendable {
 
-    private AbsoluteEncoder absoluteEncoder;
+    private final AbsoluteEncoder absoluteEncoder;
 
     // private ProfiledPIDController localController;
 
-    private double encoderOffset;
-    private SparkMaxPIDController controller;
+    private final double encoderOffset;
+    private final SparkMaxPIDController controller;
     private double target = 0;
     private final double tolerance;
 

@@ -9,7 +9,7 @@ import java.util.Map;
 public class AutonomousLoader<E extends Enum<E>> {
     Map<E, Command> autoRoutes = new HashMap<>();
 
-    private SendableChooser chooser;
+    private final SendableChooser chooser;
 
     public AutonomousLoader(Map<E, Command> autoRoutes) {
         //Routes

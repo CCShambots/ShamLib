@@ -14,7 +14,7 @@ import java.util.List;
 
 public class TrajectoryBuilder {
 
-    private List<PathPoint> points = new ArrayList<>();
+    private final List<PathPoint> points = new ArrayList<>();
     private Rotation2d lastHolonomicRotation;
     private final PathConstraints constraints;
 

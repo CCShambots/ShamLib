@@ -40,7 +40,7 @@ public class SwerveDriveV5 {
 
     private boolean fieldRelative = true;
 
-    private Field2d field;
+    private final Field2d field;
     private final boolean extraTelemetry;
 
     /**

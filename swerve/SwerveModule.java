@@ -41,7 +41,7 @@ public class SwerveModule implements Sendable{
     private final VelocityTalonFXPro driveMotor;
 
     private final CANCoder turnEncoder;
-    private double encoderOffset;
+    private final double encoderOffset;
 
     private final boolean extraTelemetry;
 
@@ -49,7 +49,7 @@ public class SwerveModule implements Sendable{
 
     private double targetModuleAngle;
 
-    private Translation2d moduleOffset;
+    private final Translation2d moduleOffset;
 
     public SwerveModule(String name,
                         String canbus,
