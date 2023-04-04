@@ -6,15 +6,12 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
-import static java.lang.Math.IEEEremainder;
-import static java.lang.Math.PI;
-
 public class Limelight {
 
     private final NetworkTable table;
 
     private final Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
-    private final String[] defaultElementOutput = new String[]{"none"};
+    private final Long[] defaultElementOutput = new Long[]{0l};
 
     /**
      * Creates a limelight object
@@ -94,8 +91,8 @@ public class Limelight {
         return new Pose3d(botPose[0]+8.2296, botPose[1]+4.1148, botPose[2], new Rotation3d(Math.toRadians(botPose[3]), Math.toRadians(botPose[4]), Math.toRadians(botPose[5])));
     }
 
-    public String getCurrentElement() {
-        return table.getEntry("llpython").getStringArray(defaultElementOutput)[0];
+    public int getCurrentElement() {
+        return table.getEntry("llpython").getIntegerArray(defaultElementOutput)[0].intValue();
     }
 
 
