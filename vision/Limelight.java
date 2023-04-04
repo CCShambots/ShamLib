@@ -11,7 +11,7 @@ public class Limelight {
     private final NetworkTable table;
 
     private final Double[] defaultPose = new Double[]{0.,0.,0.,0.,0.,0.};
-    private final Long[] defaultElementOutput = new Long[]{0l};
+    private final Double[] defaultElementOutput = new Double[]{0.};
 
     /**
      * Creates a limelight object
@@ -92,7 +92,7 @@ public class Limelight {
     }
 
     public int getCurrentElement() {
-        return table.getEntry("llpython").getIntegerArray(defaultElementOutput)[0].intValue();
+        return table.getEntry("llpython").getDoubleArray(defaultElementOutput)[0].intValue();
     }
 
 

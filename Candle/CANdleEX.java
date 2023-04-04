@@ -45,7 +45,7 @@ public class CANdleEX extends CANdle {
         clearAnimation(0);
         for(MultipleColorSegments.ColorSegmentInfo info : segs.colorSegmentInfoList) {
             RGB rgb = info.rgb;
-            setLEDs(rgb.R, rgb.G, rgb.B, 0, info.numLEDs, info.startLED);
+            setLEDs(rgb.R, rgb.G, rgb.B, 0, info.startLED, info.numLEDs);
         }
     }
 
