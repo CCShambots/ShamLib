@@ -212,13 +212,13 @@ public class SwerveDrive {
      */
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange, double maxChassisSpeed) {
 
-        if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
-            speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
-            if(Math.abs(Math.toDegrees(speeds.omegaRadiansPerSecond)) < 4) {
-                speeds.omegaRadiansPerSecond = 0;
-            }
+        // if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
+        //     speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
+        //     if(Math.abs(Math.toDegrees(speeds.omegaRadiansPerSecond)) < 4) {
+        //         speeds.omegaRadiansPerSecond = 0;
+        //     }
 
-        } else if(allowHoldAngleChange) setHoldAngle(getCurrentAngle());
+        // } else if(allowHoldAngleChange) setHoldAngle(getCurrentAngle());
 
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
