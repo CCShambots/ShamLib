@@ -291,6 +291,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         return new WaitUntilCommand(() -> getState() == state);
     }
 
+    public final Command waitForFlag(E state) {
+        return new WaitUntilCommand(() -> isFlag(state));
+    }
+
     /**
      * Get the current flags of a state
      * @return the current flags
