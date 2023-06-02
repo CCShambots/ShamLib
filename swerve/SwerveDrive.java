@@ -142,6 +142,17 @@ public class SwerveDrive {
         odometry.update(getCurrentAngle(), getModulePositions());
     }
 
+    public double[] getModuleAngles() { 
+
+        double[] angles = new double[numModules];
+
+        for(int i = 0; i<modules.size(); i++) {
+            angles[i] = modules.get(i).getCurrentState().angle.getDegrees();
+        }
+
+        return angles;
+    }
+
     public SwerveModuleState[] getModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[numModules];
 
