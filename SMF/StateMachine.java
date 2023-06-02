@@ -81,6 +81,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         onEnable();
     }
 
+    /**
+     * Whether the state machine is enabled
+     * @return the current enabled status of the state machine
+     */
     public final boolean isEnabled() {
         return enabled;
     }
@@ -287,12 +291,21 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
                 () -> {}, (interrupted) -> {}, () -> getState() == state);
     }
 
+    /**
+     * @param state the state to wait for
+     * @return the command to run
+     */
     public final Command waitForState(E state) {
         return new WaitUntilCommand(() -> getState() == state);
     }
 
-    public final Command waitForFlag(E state) {
-        return new WaitUntilCommand(() -> isFlag(state));
+    /**
+     * Wait for the state machine to indicate that a flag has been found
+     * @param flag the flag state to wait for
+     * @return the command to run
+     */
+    public final Command waitForFlag(E flag) {
+        return new WaitUntilCommand(() -> isFlag(flag));
     }
 
     /**
@@ -320,6 +333,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         currentFlags.add(flag);
     }
 
+    /**
+     * A command to set a flag on the state machine
+     * @param flag the flag to set on the state machine
+     * @return the command to run
+     */
     public final Command setFlagCommand(E flag) {
         return new InstantCommand(() -> setFlag(flag));    
     }
@@ -403,7 +421,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
         builder.setSmartDashboardType("Stated subsystem");
 
-        builder.addStringProperty("Name", () -> getName(), null);
+        builder.addStringProperty("Name", this::getName, null);
         builder.addStringProperty("Current State", () -> getState().name(), null);
         builder.addStringProperty("Desired State", () -> isTransitioning() ? getCurrentTransition().getEndState().name() : getState().name(), null);
         builder.addStringArrayProperty("Current Flag States", () -> {
@@ -418,7 +436,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
             return arr;
         }, null);
-        builder.addBooleanProperty("Transitioning", () -> isTransitioning(), null);
+        builder.addBooleanProperty("Transitioning", this::isTransitioning, null);
         builder.addBooleanProperty("Enabled", () -> enabled, null);
 
         additionalSendableData(builder);
