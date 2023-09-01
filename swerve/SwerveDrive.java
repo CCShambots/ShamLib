@@ -2,7 +2,7 @@ package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
-import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;

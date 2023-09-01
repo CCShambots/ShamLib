@@ -1,7 +1,7 @@
 package frc.robot.ShamLib.motors.pro;
 
-import com.ctre.phoenixpro.configs.TalonFXConfiguration;
-import com.ctre.phoenixpro.controls.VelocityVoltage;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 
 public class VelocityTalonFXPro extends EnhancedTalonFXPro {
 

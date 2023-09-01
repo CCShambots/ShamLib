@@ -1,12 +1,10 @@
 package frc.robot.ShamLib.motors.pro;
 
-import com.ctre.phoenixpro.configs.MotionMagicConfigs;
-import com.ctre.phoenixpro.configs.TalonFXConfiguration;
-import com.ctre.phoenixpro.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 public class MotionMagicTalonFXPro extends EnhancedTalonFXPro {
-    private int kTimeoutMs = 30;
-
     private double target; //In output units
 
     /**
