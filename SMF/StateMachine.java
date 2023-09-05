@@ -240,7 +240,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
      */
     public final void requestTransition(E state) {
         TransitionBase<E> transition = transitionGraph.getEdge(currentState, state);
-        if(!isTransitioning() && transition != null) {
+        //Stop transitions to the same state from happening
+        if(!isTransitioning() && transition != null && state != currentState) {
             currentTransition = transition;
             cancelStateCommand();
             transition.execute();
