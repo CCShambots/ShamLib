@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors.pro;
+package frc.robot.ShamLib.motors.talonfx;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
