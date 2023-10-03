@@ -1,9 +1,7 @@
 package frc.robot.ShamLib.Candle;
 
 import com.ctre.phoenix.led.*;
-import com.ctre.phoenix.led.LarsonAnimation.BounceMode;
 
-import frc.robot.Constants;
 
 public class CANdleEX extends CANdle {
 

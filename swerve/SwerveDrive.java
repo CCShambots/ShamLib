@@ -1,8 +1,8 @@
 package frc.robot.ShamLib.swerve;
 
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
-import com.ctre.phoenix.sensors.WPI_Pigeon2;
-import com.ctre.phoenixpro.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
@@ -35,7 +35,7 @@ public class SwerveDrive {
     protected final double maxChassisSpeed;
     protected final double maxChassisAcceleration;
     private int numModules = 0;
-    private final WPI_Pigeon2 gyro;
+    private final Pigeon2 gyro;
     private double rotationOffset;
     private Rotation2d holdAngle;
 
@@ -91,7 +91,7 @@ public class SwerveDrive {
         xHoldController = translationGains.applyToController();
         yHoldController = translationGains.applyToController();
 
-        gyro = new WPI_Pigeon2(pigeon2ID, gyroCanbus);
+        gyro = new Pigeon2(pigeon2ID, gyroCanbus);
 
         modules = new ArrayList<>();
         Translation2d[] offsets = new Translation2d[moduleInfos.length];
@@ -104,7 +104,8 @@ public class SwerveDrive {
                     m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted, extraTelemetry));
         }
 
-        gyro.configFactoryDefault();
+        Pigeon2Configuration factoryConfig = new Pigeon2Configuration();
+        gyro.getConfigurator().apply(factoryConfig);
 
         rotationOffset = getGyroHeading();
         holdAngle = new Rotation2d(rotationOffset);
@@ -120,11 +121,11 @@ public class SwerveDrive {
     }
 
     public double getPitch() {
-        return gyro.getPitch();
+        return gyro.getPitch().getValue();
     }
 
     public double getRoll() {
-        return gyro.getRoll();
+        return gyro.getRoll().getValue();
     }
 
     public void addVisionMeasurement(Pose2d pose) {
@@ -316,7 +317,7 @@ public class SwerveDrive {
     }
 
     public double getGyroHeading() {
-        return gyro.getYaw();
+        return gyro.getYaw().getValue();
     }
 
     public Rotation2d getHoldAngle() {

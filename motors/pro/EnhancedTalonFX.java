@@ -1,11 +1,11 @@
 package frc.robot.ShamLib.motors.pro;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenixpro.configs.MotorOutputConfigs;
-import com.ctre.phoenixpro.configs.Slot0Configs;
-import com.ctre.phoenixpro.hardware.TalonFX;
-import com.ctre.phoenixpro.signals.InvertedValue;
-import com.ctre.phoenixpro.signals.NeutralModeValue;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -15,12 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
-import static com.ctre.phoenixpro.signals.InvertedValue.Clockwise_Positive;
-import static com.ctre.phoenixpro.signals.NeutralModeValue.Brake;
 
-public class EnhancedTalonFXPro extends TalonFX {
+public class EnhancedTalonFX extends TalonFX {
     private final double inputToOutputRatio;
-    private double target; //In output units
 
     /**
      * Constructor for a TalonFX with gear ratio math included
@@ -28,7 +25,7 @@ public class EnhancedTalonFXPro extends TalonFX {
      * @param canbus name of the canbus (i.e. for CANivore)
      * @param inputToOutputRatio number to multiply TalonFX rotations by to get output units (i.e. degree/tick)
      */
-    public EnhancedTalonFXPro(int deviceNumber, String canbus, double inputToOutputRatio) {
+    public EnhancedTalonFX(int deviceNumber, String canbus, double inputToOutputRatio) {
         super(deviceNumber, canbus);
 
         this.inputToOutputRatio = inputToOutputRatio;
@@ -40,9 +37,10 @@ public class EnhancedTalonFXPro extends TalonFX {
      * @param deviceNumber CAN ID
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public EnhancedTalonFXPro(int deviceNumber, double inputToOutputRatio) {
+    public EnhancedTalonFX(int deviceNumber, double inputToOutputRatio) {
         this(deviceNumber, "", inputToOutputRatio);
     }
+
 
     public void configure(NeutralModeValue neutralMode, InvertedValue invertedValue) {
         MotorOutputConfigs config = new MotorOutputConfigs();
