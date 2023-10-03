@@ -1,8 +1,7 @@
 package frc.robot.ShamLib.swerve;
 
+import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.Pigeon2Configuration;
-import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlannerTrajectory;
 import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
@@ -35,11 +34,11 @@ public class SwerveDrive {
     protected final double maxChassisSpeed;
     protected final double maxChassisAcceleration;
     private int numModules = 0;
-    private final Pigeon2 gyro;
-    private double rotationOffset;
+    private final WPI_Pigeon2 gyro;
+    private Rotation2d rotationOffset;
     private Rotation2d holdAngle;
 
-    protected final PIDController thetaHoldControllerTele, thetaHoldControllerAuto, xHoldController, yHoldController;
+    protected final PIDController thetaHoldControllerAuto, xHoldController, yHoldController;
     private final SwerveDrivePoseEstimator odometry;
 
     private boolean fieldRelative = true;
@@ -71,7 +70,6 @@ public class SwerveDrive {
                        double maxChassisAccel,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,
-                       PIDGains teleThetaGains,
                        PIDGains autoThetaGains,
                        PIDGains translationGains,
                        boolean extraTelemetry,
@@ -84,14 +82,11 @@ public class SwerveDrive {
         this.maxChassisSpeed = maxChassisSpeed;
         this.maxChassisAcceleration = maxChassisAccel;
 
-        //Apply the gains passed in the constructors
-        thetaHoldControllerTele =  teleThetaGains.applyToController();
-
         thetaHoldControllerAuto = autoThetaGains.applyToController();
         xHoldController = translationGains.applyToController();
         yHoldController = translationGains.applyToController();
 
-        gyro = new Pigeon2(pigeon2ID, gyroCanbus);
+        gyro = new WPI_Pigeon2(pigeon2ID, gyroCanbus);
 
         modules = new ArrayList<>();
         Translation2d[] offsets = new Translation2d[moduleInfos.length];
@@ -104,28 +99,25 @@ public class SwerveDrive {
                     m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted, extraTelemetry));
         }
 
-        Pigeon2Configuration factoryConfig = new Pigeon2Configuration();
-        gyro.getConfigurator().apply(factoryConfig);
+        gyro.configFactoryDefault();
 
         rotationOffset = getGyroHeading();
-        holdAngle = new Rotation2d(rotationOffset);
-        thetaHoldControllerTele.setTolerance(Math.toRadians(1.5));
+        holdAngle = new Rotation2d(rotationOffset.getRadians());
 
         kDriveKinematics = new SwerveDriveKinematics(offsets);
 
         odometry = new SwerveDrivePoseEstimator(kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d());
 
-        thetaHoldControllerTele.enableContinuousInput(-Math.PI, Math.PI);
         thetaHoldControllerAuto.enableContinuousInput(-Math.PI, Math.PI);
         field = new Field2d();
     }
 
-    public double getPitch() {
-        return gyro.getPitch().getValue();
+    public Rotation2d getPitch() {
+        return Rotation2d.fromDegrees(gyro.getPitch());
     }
 
-    public double getRoll() {
-        return gyro.getRoll().getValue();
+    public Rotation2d getRoll() {
+        return Rotation2d.fromDegrees(gyro.getRoll());
     }
 
     public void addVisionMeasurement(Pose2d pose) {
@@ -224,14 +216,6 @@ public class SwerveDrive {
      */
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange, double maxChassisSpeed) {
 
-        // if(speeds.omegaRadiansPerSecond == 0 && !thetaHoldControllerTele.atSetpoint()) {
-        //     speeds.omegaRadiansPerSecond += thetaHoldControllerTele.calculate(getCurrentAngle().getRadians());
-        //     if(Math.abs(Math.toDegrees(speeds.omegaRadiansPerSecond)) < 4) {
-        //         speeds.omegaRadiansPerSecond = 0;
-        //     }
-
-        // } else if(allowHoldAngleChange) setHoldAngle(getCurrentAngle());
-
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
 
@@ -240,10 +224,6 @@ public class SwerveDrive {
 
     public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
         drive(speeds, allowHoldAngleChange, maxChassisSpeed);
-    }
-
-    public void fixHoldAngle() {
-        setHoldAngle(getCurrentAngle());
     }
 
     /**
@@ -267,7 +247,8 @@ public class SwerveDrive {
      * @return Robot angle
      */
     public Rotation2d getCurrentAngle(){
-        return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI * 2));
+        // return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180), Math.PI * 2));
+        return getGyroHeading().minus(rotationOffset);
     }
 
     public void stopModules() {
@@ -316,8 +297,8 @@ public class SwerveDrive {
         return odometry.getEstimatedPosition();
     }
 
-    public double getGyroHeading() {
-        return gyro.getYaw().getValue();
+    public Rotation2d getGyroHeading() {
+        return Rotation2d.fromDegrees(gyro.getYaw());
     }
 
     public Rotation2d getHoldAngle() {
@@ -326,11 +307,6 @@ public class SwerveDrive {
 
     public boolean isFieldRelative() {return fieldRelative;}
     public void setFieldRelative(boolean value) {fieldRelative = value;}
-
-    public void setHoldAngle(Rotation2d angle) {
-        holdAngle = angle;
-        thetaHoldControllerTele.setSetpoint(angle.getRadians());
-    }
 
     public ChassisSpeeds getChassisSpeeds() {
         return kDriveKinematics.toChassisSpeeds(getModuleStates());
@@ -353,12 +329,12 @@ public class SwerveDrive {
     //TODO: Make this play nice with the odometry. Need to test if this is even an issue
     public void resetGyro(Rotation2d angle) {
         gyro.setYaw(angle.getDegrees());
-        rotationOffset = 0;
+        rotationOffset = new Rotation2d();
         holdAngle = angle;
     }
 
     public void resetRotationOffset(Rotation2d angle) {
-        rotationOffset = angle.getDegrees();
+        rotationOffset = angle;
     }
 
     public void resetGyro() {resetGyro(new Rotation2d());}

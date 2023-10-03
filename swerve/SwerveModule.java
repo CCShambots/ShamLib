@@ -1,12 +1,7 @@
 package frc.robot.ShamLib.swerve;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
@@ -22,16 +17,13 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.talonfx.MotionMagicTalonFX;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 import frc.robot.ShamLib.motors.talonfx.VelocityTalonFX;
 
-import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_DIFF;
 
 public class SwerveModule implements Sendable{
 
