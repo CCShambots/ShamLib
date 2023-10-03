@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
 
 
-public class EnhancedTalonFXPro extends TalonFX {
+public class EnhancedTalonFX extends TalonFX {
     private final double inputToOutputRatio;
 
     /**
@@ -25,7 +25,7 @@ public class EnhancedTalonFXPro extends TalonFX {
      * @param canbus name of the canbus (i.e. for CANivore)
      * @param inputToOutputRatio number to multiply TalonFX rotations by to get output units (i.e. degree/tick)
      */
-    public EnhancedTalonFXPro(int deviceNumber, String canbus, double inputToOutputRatio) {
+    public EnhancedTalonFX(int deviceNumber, String canbus, double inputToOutputRatio) {
         super(deviceNumber, canbus);
 
         this.inputToOutputRatio = inputToOutputRatio;
@@ -37,9 +37,10 @@ public class EnhancedTalonFXPro extends TalonFX {
      * @param deviceNumber CAN ID
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public EnhancedTalonFXPro(int deviceNumber, double inputToOutputRatio) {
+    public EnhancedTalonFX(int deviceNumber, double inputToOutputRatio) {
         this(deviceNumber, "", inputToOutputRatio);
     }
+
 
     public void configure(NeutralModeValue neutralMode, InvertedValue invertedValue) {
         MotorOutputConfigs config = new MotorOutputConfigs();

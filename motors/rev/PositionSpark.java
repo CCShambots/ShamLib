@@ -5,7 +5,6 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
-import frc.robot.ShamLib.motors.v5.PIDFGains;
 
 import static com.revrobotics.SparkMaxAbsoluteEncoder.Type.kDutyCycle;
 import static java.lang.Math.PI;

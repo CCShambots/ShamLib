@@ -28,8 +28,8 @@ import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.pro.PIDSVGains;
-import frc.robot.ShamLib.motors.pro.MotionMagicTalonFXPro;
-import frc.robot.ShamLib.motors.pro.VelocityTalonFXPro;
+import frc.robot.ShamLib.motors.pro.MotionMagicTalonFX;
+import frc.robot.ShamLib.motors.pro.VelocityTalonFX;
 
 import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_DIFF;
 
@@ -37,8 +37,8 @@ public class SwerveModule implements Sendable{
 
     private final String moduleName;
 
-    private final MotionMagicTalonFXPro turnMotor;
-    private final VelocityTalonFXPro driveMotor;
+    private final MotionMagicTalonFX turnMotor;
+    private final VelocityTalonFX driveMotor;
 
     private final CANCoder turnEncoder;
     private final double encoderOffset;
@@ -84,11 +84,11 @@ public class SwerveModule implements Sendable{
 
         this.encoderOffset = encoderOffset;
 
-        turnMotor = new MotionMagicTalonFXPro(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
+        turnMotor = new MotionMagicTalonFX(turnID, canbus, turnGains, turnRatio, maxTurnVelo, maxTurnAccel);
         turnMotor.setInverted(turnInverted); //All turn modules were inverted
         applyCurrentLimit(turnMotor, currentLimit);
 
-        driveMotor = new VelocityTalonFXPro(driveID, canbus, driveGains, driveRatio);
+        driveMotor = new VelocityTalonFX(driveID, canbus, driveGains, driveRatio);
         driveMotor.setInverted(driveInverted);
         applyCurrentLimit(driveMotor, currentLimit);
 
