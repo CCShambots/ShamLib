@@ -21,7 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
-import frc.robot.ShamLib.motors.pro.PIDSVGains;
+import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;

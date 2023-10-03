@@ -27,9 +27,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
-import frc.robot.ShamLib.motors.pro.PIDSVGains;
-import frc.robot.ShamLib.motors.pro.MotionMagicTalonFX;
-import frc.robot.ShamLib.motors.pro.VelocityTalonFX;
+import frc.robot.ShamLib.motors.talonfx.MotionMagicTalonFX;
+import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
+import frc.robot.ShamLib.motors.talonfx.VelocityTalonFX;
 
 import static frc.robot.ShamLib.ShamLibConstants.Swerve.ALLOWED_STOPPED_MODULE_DIFF;
 
