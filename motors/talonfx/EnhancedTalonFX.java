@@ -55,7 +55,7 @@ public class EnhancedTalonFX extends TalonFX {
      * @return output units
      */
     public double getEncoderPosition() {
-        return ticksToOutput(getPosition().getValue());
+        return ticksToOutput(getRotorPosition().getValue());
     }
 
 
