@@ -3,14 +3,17 @@ package frc.robot.ShamLib.swerve;
 import java.util.function.BooleanSupplier;
 
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.AbsoluteSensorRangeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -32,7 +35,7 @@ public class SwerveModule implements Sendable{
     private final MotionMagicTalonFX turnMotor;
     private final VelocityTalonFX driveMotor;
 
-    private final CANCoder turnEncoder;
+    private final CANcoder turnEncoder;
     private final double encoderOffset;
 
     private final boolean extraTelemetry;
@@ -67,12 +70,12 @@ public class SwerveModule implements Sendable{
 
         this.extraTelemetry = extraTelemetry;
 
-        this.turnEncoder = new CANCoder(encoderID, canbus);
-        turnEncoder.configFactoryDefault();
+        this.turnEncoder = new CANcoder(encoderID, canbus);
+        CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
+        canCoderConfig.MagnetSensor.AbsoluteSensorRange = AbsoluteSensorRangeValue.Signed_PlusMinusHalf;
+        canCoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
 
-        turnEncoder.configSensorInitializationStrategy(SensorInitializationStrategy.BootToAbsolutePosition);
-        turnEncoder.configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180);
-        turnEncoder.configSensorDirection(false);
+        this.turnEncoder.getConfigurator().apply(canCoderConfig);
 
         this.encoderOffset = encoderOffset;
 
@@ -178,11 +181,11 @@ public class SwerveModule implements Sendable{
     }
 
     public Rotation2d getAbsoluteAngle() {
-        return Rotation2d.fromDegrees(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+        return Rotation2d.fromDegrees(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset));
     }
 
     public void pullAbsoluteAngle() {
-        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset));
+        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset));
     }
 
     public void resetAngle(Rotation2d angle) {
@@ -217,7 +220,8 @@ public class SwerveModule implements Sendable{
         builder.setSmartDashboardType("Swerve Module");
 
         builder.addDoubleProperty("Angle", () -> getTurnAngle().getDegrees(), null);
-        builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition() - encoderOffset), null);
+        builder.addDoubleProperty("Raw encoder angle", () -> turnEncoder.getAbsolutePosition().getValue()*360, null);
+        builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset), null);
         builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getTarget(), null);
         builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getEncoderPosition()), null);
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
