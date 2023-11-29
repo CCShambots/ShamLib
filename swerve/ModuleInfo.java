@@ -14,22 +14,6 @@ public class ModuleInfo {
     final boolean driveInverted;
     final boolean turnInverted;
 
-    //TODO: Properly support both phoenix pro and phoenix V5
-    private static final double mk3TurnRatio  =
-            (1.0 / 2048) *
-            (1.0 / 12.8) * //
-            360
-    ;
-
-    private static final double mk4iTurnRatio =
-//        (1.0 / 2048) * //Motor revs
-        (7.0 / 150.0) * //Output revs
-        360 //Output degrees
-    ;
-
-    private static final double mk4iWheelCircumference =
-            2 * Math.PI * 0.0508;
-
     public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset,
                       Translation2d offset, double turnRatio, double driveRatio, boolean driveInverted, boolean turnInverted) {
         this.driveMotorID = driveMotorID;
@@ -43,47 +27,51 @@ public class ModuleInfo {
         this.turnInverted = turnInverted;
     }
 
-    public static ModuleInfo getMK3L1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted, boolean turnInverted) {
+    public static ModuleInfo generateModuleInfo(
+        SwerveModuleType type, 
+        SwerveModuleSpeedLevel speed, 
+        int driveMotorID, 
+        int turnMotorID, 
+        int encoderID, 
+        double encoderOffset, 
+        Translation2d offset, 
+        boolean driveInverted
+    ) {
         return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
-                mk3TurnRatio,
-                (1.0 / 2048) *
-                (1.0 / 8.16) *
-                mk4iWheelCircumference,
-                driveInverted,
-                turnInverted
+            type.turnRatio,
+            speed.gearRatio * type.wheelCircumferencne,
+            driveInverted,
+            type.turnInverted
         );
     }
 
-    public static ModuleInfo getMK4IL1Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
-        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
-                mk4iTurnRatio,
-//                (1.0 / 2048) * //Motor revs
-                (1.0 / 8.14) * //Output revs
-                mk4iWheelCircumference, //Output meters
-                driveInverted,
-                true
-        );
+    public enum SwerveModuleType {
+        MK4(false, (1.0 / 12.8) * 360, 2 * Math.PI * 0.0508),
+        MK4i(true,  (7.0 / 150.0) * 360, 2 * Math.PI * 0.0508);
+
+        public final boolean turnInverted; //Whether the turn motor should be inverted
+        public final double turnRatio; //The gear ratio on the turn motor (deg)
+        public final double wheelCircumferencne; //The circumference of the swerve's wheels(m)
+
+        private SwerveModuleType(boolean turnInverted, double turnRatio, double wheelCircumferencne) {
+            this.turnInverted = turnInverted;
+            this.turnRatio = turnRatio;
+            this.wheelCircumferencne = wheelCircumferencne;
+        }
     }
 
-    public static ModuleInfo getMK4IL2Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
-        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
-                mk4iTurnRatio,
-                // (1.0 / 2048) * //Motor revs
-                (1.0 / 6.75) * //Output revs
-                mk4iWheelCircumference, //Output meters
-                driveInverted,
-                true
-        );
+    public enum SwerveModuleSpeedLevel {
+        L1(1.0 / 8.14), //Slowest
+        L2(1.0 / 6.75),
+        L3(1.0 /  6.12),
+        //NOTE: L4 doesn't exist for MK4i
+        L4(1.0 / 5.14); //Fastest
+
+
+        public final double gearRatio;
+        private SwerveModuleSpeedLevel(double gearRatio) {
+            this.gearRatio = gearRatio;
+        }
     }
 
-    public static ModuleInfo getMK4IL3Module(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset, Translation2d offset, boolean driveInverted) {
-        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
-                mk4iTurnRatio,
-                // (1.0 / 2048) * //Motor revs
-                (1.0 / 6.12) * //Output revs
-                mk4iWheelCircumference, //Output meters
-                driveInverted,
-                true
-        );
-    }
 }
