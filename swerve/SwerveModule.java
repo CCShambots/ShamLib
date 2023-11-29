@@ -36,8 +36,6 @@ public class SwerveModule implements Sendable{
     private final CANcoder turnEncoder;
     private final Rotation2d encoderOffset;
 
-    private final boolean extraTelemetry;
-
     private SwerveModuleState targetState;
 
     private double targetModuleAngle;
@@ -59,14 +57,11 @@ public class SwerveModule implements Sendable{
                         double driveRatio,
                         CurrentLimitsConfigs currentLimit,
                         boolean driveInverted,
-                        boolean turnInverted,
-                        boolean extraTelemetry
-    ) {
+                        boolean turnInverted
+        ) {
         this.moduleOffset = moduleOffset;
         
         this.moduleName = name;
-
-        this.extraTelemetry = extraTelemetry;
 
         this.turnEncoder = new CANcoder(encoderID, canbus);
         CANcoderConfiguration canCoderConfig = new CANcoderConfiguration();
@@ -111,10 +106,9 @@ public class SwerveModule implements Sendable{
                         double driveRatio,
                         CurrentLimitsConfigs currentLimit,
                         boolean driveInverted,
-                        boolean turnInverted,
-                        boolean extraTelemetry
+                        boolean turnInverted
     ) {
-        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted, extraTelemetry);
+        this(name, "", turnID, driveID, encoderID, encoderOffset, moduleOffset, driveGains, turnGains, maxTurnVelo, maxTurnAccel, turnRatio, driveRatio, currentLimit, driveInverted, turnInverted);
     }
 
     private void applyCurrentLimit(TalonFX motor, CurrentLimitsConfigs limit) {

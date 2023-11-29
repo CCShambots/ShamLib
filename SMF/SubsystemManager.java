@@ -96,7 +96,7 @@ public class SubsystemManager {
      * Tell all subsystems that they should be enabled
      */
     public void enableAllSubsystems() {
-        for(StateMachine s : subsystems) {
+        for(StateMachine<?> s : subsystems) {
             s.enable();
         }
     }
@@ -105,7 +105,7 @@ public class SubsystemManager {
      * Tell all subsystems that they should be disabled
      */
     public void disableAllSubsystems() {
-        for(StateMachine s : subsystems) {
+        for(StateMachine<?> s : subsystems) {
             s.disable();
         }
     }
