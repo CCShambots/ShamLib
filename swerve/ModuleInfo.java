@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.swerve;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class ModuleInfo {
@@ -7,14 +8,14 @@ public class ModuleInfo {
     final int driveMotorID;
     final int turnMotorID;
     final int encoderID;
-    final double encoderOffset;
+    final Rotation2d encoderOffset;
     final Translation2d offset;
     final double turnRatio;
     final double driveRatio;
     final boolean driveInverted;
     final boolean turnInverted;
 
-    public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, double encoderOffset,
+    public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, Rotation2d encoderOffset,
                       Translation2d offset, double turnRatio, double driveRatio, boolean driveInverted, boolean turnInverted) {
         this.driveMotorID = driveMotorID;
         this.turnMotorID = turnMotorID;
@@ -27,6 +28,18 @@ public class ModuleInfo {
         this.turnInverted = turnInverted;
     }
 
+    /**
+     * 
+     * @param type SDS Module type (i.e. MK4i)
+     * @param speed Speed level of SDS module
+     * @param driveMotorID CAN ID of the drive motor
+     * @param turnMotorID CAN ID of the turn motor
+     * @param encoderID CAN ID of the CANCoder
+     * @param encoderOffset in degrees; should be set equal to the encoder reading 
+     * @param offset Translational offset of the swerve module from the robot's center
+     * @param driveInverted whether the drive motor should be inverted from its standard direction
+     * @return the module info to pass into the SwerveDrive 
+     */
     public static ModuleInfo generateModuleInfo(
         SwerveModuleType type, 
         SwerveModuleSpeedLevel speed, 
@@ -37,7 +50,9 @@ public class ModuleInfo {
         Translation2d offset, 
         boolean driveInverted
     ) {
-        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, encoderOffset, offset,
+        return new ModuleInfo(driveMotorID, turnMotorID, encoderID, 
+            Rotation2d.fromDegrees(encoderOffset), 
+            offset,
             type.turnRatio,
             speed.gearRatio * type.wheelCircumferencne,
             driveInverted,

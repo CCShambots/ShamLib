@@ -2,8 +2,6 @@ package frc.robot.ShamLib.swerve;
 
 import java.util.function.BooleanSupplier;
 
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -36,7 +34,7 @@ public class SwerveModule implements Sendable{
     private final VelocityTalonFX driveMotor;
 
     private final CANcoder turnEncoder;
-    private final double encoderOffset;
+    private final Rotation2d encoderOffset;
 
     private final boolean extraTelemetry;
 
@@ -51,7 +49,7 @@ public class SwerveModule implements Sendable{
                         int turnID,
                         int driveID,
                         int encoderID,
-                        double encoderOffset,
+                        Rotation2d encoderOffset,
                         Translation2d moduleOffset,
                         PIDSVGains driveGains,
                         PIDSVGains turnGains,
@@ -103,7 +101,7 @@ public class SwerveModule implements Sendable{
                         int turnID,
                         int driveID,
                         int encoderID,
-                        double encoderOffset,
+                        Rotation2d encoderOffset,
                         Translation2d moduleOffset,
                         PIDSVGains driveGains,
                         PIDSVGains turnGains,
@@ -181,11 +179,11 @@ public class SwerveModule implements Sendable{
     }
 
     public Rotation2d getAbsoluteAngle() {
-        return Rotation2d.fromDegrees(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset));
+        return Rotation2d.fromDegrees(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset.getDegrees()));
     }
 
     public void pullAbsoluteAngle() {
-        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset));
+        turnMotor.resetPosition(normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset.getDegrees()));
     }
 
     public void resetAngle(Rotation2d angle) {
@@ -221,9 +219,8 @@ public class SwerveModule implements Sendable{
 
         builder.addDoubleProperty("Angle", () -> getTurnAngle().getDegrees(), null);
         builder.addDoubleProperty("Raw encoder angle", () -> turnEncoder.getAbsolutePosition().getValue()*360, null);
-        builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset), null);
-        builder.addDoubleProperty("Raw Setpoint", () -> driveMotor.getTarget(), null);
-        builder.addDoubleProperty("erorr", () -> Math.abs(turnMotor.getTarget() - turnMotor.getEncoderPosition()), null);
+        builder.addDoubleProperty("Angle (wrapped - encoder)", () -> normalizeDegrees(turnEncoder.getAbsolutePosition().getValue() * 360 - encoderOffset.getDegrees()), null);
+        builder.addDoubleProperty("Position error", () -> Math.abs(turnMotor.getTarget() - turnMotor.getEncoderPosition()), null);
         builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
         builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
         builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);
