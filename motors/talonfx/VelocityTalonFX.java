@@ -1,9 +1,9 @@
-package frc.robot.ShamLib.motors.pro;
+package frc.robot.ShamLib.motors.talonfx;
 
-import com.ctre.phoenixpro.configs.TalonFXConfiguration;
-import com.ctre.phoenixpro.controls.VelocityVoltage;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 
-public class VelocityTalonFXPro extends EnhancedTalonFXPro {
+public class VelocityTalonFX extends EnhancedTalonFX {
 
     private double target; //In output units
 
@@ -14,7 +14,7 @@ public class VelocityTalonFXPro extends EnhancedTalonFXPro {
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public VelocityTalonFXPro(int deviceNumber, String canbus, PIDSVGains gains, double inputToOutputRatio) {
+    public VelocityTalonFX(int deviceNumber, String canbus, PIDSVGains gains, double inputToOutputRatio) {
         super(deviceNumber, canbus, inputToOutputRatio);
 
         TalonFXConfiguration config = new TalonFXConfiguration();
@@ -30,7 +30,7 @@ public class VelocityTalonFXPro extends EnhancedTalonFXPro {
      * @param gains PIDF gains
      * @param inputToOutputRatio number to multiply TalonFX integrated encoder ticks by to get output units
      */
-    public VelocityTalonFXPro(int deviceNumber, PIDSVGains gains, double inputToOutputRatio) {
+    public VelocityTalonFX(int deviceNumber, PIDSVGains gains, double inputToOutputRatio) {
         this(deviceNumber, "", gains, inputToOutputRatio);
     }
 
