@@ -1,7 +1,7 @@
 package frc.robot.ShamLib.Candle;
 
-import com.ctre.phoenix.led.*;
-
+import com.ctre.phoenix.led.CANdle;
+import com.ctre.phoenix.led.CANdleConfiguration;
 
 public class CANdleEX extends CANdle {
 

@@ -98,7 +98,7 @@ public class EnhancedTalonFX extends TalonFX {
      * @param pos The position (in output units) to which the motor should be reset
      */
     public void resetPosition(double pos) {
-        setRotorPosition(outputToTicks(pos));
+        setPosition(outputToTicks(pos));
     }
 
     /**

@@ -1,5 +1,7 @@
 package frc.robot.ShamLib;
 
+import com.pathplanner.lib.util.PIDConstants;
+
 import edu.wpi.first.math.controller.PIDController;
 
 public class PIDGains {
@@ -15,5 +17,9 @@ public class PIDGains {
 
     public PIDController applyToController() {
         return new PIDController(p, i, d);
+    }
+
+    public PIDConstants toPIDConstants() {
+        return new PIDConstants(this.p, this.i, this.d);
     }
 }

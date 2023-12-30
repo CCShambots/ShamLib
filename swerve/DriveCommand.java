@@ -26,8 +26,6 @@ public class DriveCommand extends Command{
     private final double deadband;
     private final UnaryOperator<Double> controllerConversion;
 
-    private final boolean useTurning;
-
     private int prevSpeedMode;
 
     public DriveCommand(SwerveDrive drivetrain,
@@ -56,8 +54,6 @@ public class DriveCommand extends Command{
 
         this.deadband = deadband;
         this.controllerConversion = controllerConversion;
-
-        this.useTurning = useTurning;
 
         addRequirements(subsystem);
     }
@@ -96,7 +92,7 @@ public class DriveCommand extends Command{
         speeds.vyMetersPerSecond = yLimiters.get(currentSpeedMode).calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = thetaLimiters.get(currentSpeedMode).calculate(speeds.omegaRadiansPerSecond);
 
-        drivetrain.drive(speeds, useTurning, maxLinearSpeeds.get(currentSpeedMode));
+        drivetrain.drive(speeds, maxLinearSpeeds.get(currentSpeedMode));
 
         prevSpeedMode = currentSpeedMode;
     }

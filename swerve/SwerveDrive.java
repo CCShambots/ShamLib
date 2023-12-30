@@ -1,12 +1,14 @@
 package frc.robot.ShamLib.swerve;
 
-import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.pathplanner.lib.PathConstraints;
-import com.pathplanner.lib.PathPlannerTrajectory;
-import com.pathplanner.lib.PathPlannerTrajectory.PathPlannerState;
-import com.pathplanner.lib.commands.PPSwerveControllerCommand;
-import edu.wpi.first.math.controller.PIDController;
+import com.ctre.phoenix6.configs.Pigeon2Configuration;
+import com.ctre.phoenix6.hardware.Pigeon2;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.FollowPathHolonomic;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.ReplanningConfig;
+
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -25,6 +27,7 @@ import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.ArrayList;
 
 
@@ -34,12 +37,13 @@ public class SwerveDrive {
     protected final SwerveDriveKinematics kDriveKinematics;
     protected final double maxChassisSpeed;
     protected final double maxChassisAcceleration;
+    protected final double maxChassisRotationVel;
+    protected final double maxChassisRotationAccel;
     private int numModules = 0;
-    private final WPI_Pigeon2 gyro;
+    private final Pigeon2 gyro;
     private Rotation2d rotationOffset;
     private Rotation2d holdAngle;
 
-    protected final PIDController thetaHoldControllerAuto, xHoldController, yHoldController;
     private final SwerveDrivePoseEstimator odometry;
 
     private boolean fieldRelative = true;
@@ -48,6 +52,10 @@ public class SwerveDrive {
     private final boolean extraTelemetry;
 
     private int speedMode = 0;
+
+    private final PIDGains translationGains;
+    private final PIDGains rotationGains;
+    private final double driveBaseRadius; //In meters
 
     /**
      * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
@@ -69,6 +77,8 @@ public class SwerveDrive {
                        PIDSVGains moduleTurnGains,
                        double maxChassisSpeed,
                        double maxChassisAccel,
+                       double maxChassisRotationVel,
+                       double maxChassisRotationAccel,
                        double maxModuleTurnVelo,
                        double maxModuleTurnAccel,
                        PIDGains autoThetaGains,
@@ -77,17 +87,19 @@ public class SwerveDrive {
                        String moduleCanbus,
                        String gyroCanbus,
                        CurrentLimitsConfigs currentLimit,
+                       Subsystem subsystem,
                        ModuleInfo... moduleInfos) {
 
         this.extraTelemetry = extraTelemetry;
         this.maxChassisSpeed = maxChassisSpeed;
         this.maxChassisAcceleration = maxChassisAccel;
+        this.maxChassisRotationVel = maxChassisRotationVel;
+        this.maxChassisRotationAccel = maxChassisRotationAccel;
 
-        thetaHoldControllerAuto = autoThetaGains.applyToController();
-        xHoldController = translationGains.applyToController();
-        yHoldController = translationGains.applyToController();
+        this.translationGains = translationGains;
+        this.rotationGains = autoThetaGains;
 
-        gyro = new WPI_Pigeon2(pigeon2ID, gyroCanbus);
+        gyro = new Pigeon2(pigeon2ID, gyroCanbus);
 
         modules = new ArrayList<>();
         Translation2d[] offsets = new Translation2d[moduleInfos.length];
@@ -104,7 +116,8 @@ public class SwerveDrive {
             }
         }
 
-        gyro.configFactoryDefault();
+        Pigeon2Configuration pigeonConfig = new Pigeon2Configuration();
+        gyro.getConfigurator().apply(pigeonConfig);
 
         rotationOffset = getGyroHeading();
         holdAngle = new Rotation2d(rotationOffset.getRadians());
@@ -113,16 +126,32 @@ public class SwerveDrive {
 
         odometry = new SwerveDrivePoseEstimator(kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d());
 
-        thetaHoldControllerAuto.enableContinuousInput(-Math.PI, Math.PI);
         field = new Field2d();
+
+        this.driveBaseRadius = Math.hypot(moduleInfos[0].offset.getX(), moduleInfos[0].offset.getY()); //Radius of the drive base in meters
+
+        //Configure the auto builder stuff
+        AutoBuilder.configureHolonomic(
+            this::getPose,
+            this::resetOdometryPose,
+            this::getChassisSpeeds,
+            this::drive,
+            new HolonomicPathFollowerConfig(
+                translationGains.toPIDConstants(),
+                autoThetaGains.toPIDConstants(),
+                maxChassisSpeed, 
+                driveBaseRadius,
+                new ReplanningConfig()), 
+            subsystem
+        );
     }
 
     public Rotation2d getPitch() {
-        return Rotation2d.fromDegrees(gyro.getPitch());
+        return Rotation2d.fromDegrees(gyro.getPitch().getValue());
     }
 
     public Rotation2d getRoll() {
-        return Rotation2d.fromDegrees(gyro.getRoll());
+        return Rotation2d.fromDegrees(gyro.getRoll().getValue());
     }
 
     public void addVisionMeasurement(Pose2d pose) {
@@ -217,9 +246,8 @@ public class SwerveDrive {
     /**
      * Method to call to update the states of the swerve drivetrain
      * @param speeds chassis speed object to move
-     * @param allowHoldAngleChange whether the hold angle of the robot should change
      */
-    public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange, double maxChassisSpeed) {
+    public void drive(ChassisSpeeds speeds, double maxChassisSpeed) {
 
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
@@ -227,8 +255,8 @@ public class SwerveDrive {
         setModuleStates(swerveModuleStates);
     }
 
-    public void drive(ChassisSpeeds speeds, boolean allowHoldAngleChange) {
-        drive(speeds, allowHoldAngleChange, maxChassisSpeed);
+    public void drive(ChassisSpeeds speeds) {
+        drive(speeds, maxChassisSpeed);
     }
 
     /**
@@ -262,40 +290,36 @@ public class SwerveDrive {
 
     /**
      * Get a command to run a path-planner trajectory on the swerve drive
-     * @param trajectory the trajectory to run
+     * @param path the trajectory to run
      * @param resetPose whether to being the command by resetting the pose of the robot
      * @param requirements the subsystem you may need
      * @return the command to run
      */
-    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, boolean resetPose, Subsystem... requirements) {
+    public Command getPathCommand(PathPlannerPath path, boolean resetPose, Subsystem... requirements) {
+        Consumer<SwerveModuleState[]> test = a -> setModuleStates(a);
+        //TODO: Fix max speeds
+        new SwerveControllerCommand(null, null, kDriveKinematics, null, test, requirements);
         return new SequentialCommandGroup(
             new InstantCommand(() -> {
-                if(extraTelemetry) field.getObject("traj").setTrajectory(trajectory);
+                //TODO: Figure out how to post
+                // if(extraTelemetry) field.getObject("traj").setTrajectory(path);
                 if(resetPose) {
-                    PathPlannerState initialState = trajectory.getInitialState();
-                    Pose2d initialPose = initialState.poseMeters;
-                    Pose2d startPose = new Pose2d(initialPose.getX(), initialPose.getY(), initialState.holonomicRotation);
+                    Pose2d startPose = path.getPreviewStartingHolonomicPose();
                     resetOdometryPose(startPose);
                 }
             }),
-            new PPSwerveControllerCommand(
-                trajectory, this::getPose, kDriveKinematics, 
-                xHoldController, yHoldController, thetaHoldControllerAuto,
-                    this::setModuleStates, requirements)
+            new FollowPathHolonomic(
+                path, this::getPose, this::getChassisSpeeds, this::drive, 
+                translationGains.toPIDConstants(), rotationGains.toPIDConstants(), 
+                maxChassisSpeed, driveBaseRadius, new ReplanningConfig(),
+                requirements
+            )
         );
         
     }
 
-    public Command getTrajectoryCommand(PathPlannerTrajectory trajectory, Subsystem... requirements) {
-        return getTrajectoryCommand(trajectory, false, requirements);
-    }
-
-    public TrajectoryBuilder getTrajectoryBuilder(PathConstraints constraints) {
-        return new TrajectoryBuilder(getPose(), kDriveKinematics.toChassisSpeeds(getModuleStates()), constraints);
-    }
-
-    public TrajectoryBuilder getTrajectoryBuilder() {
-        return getTrajectoryBuilder(new PathConstraints(this.maxChassisSpeed, this.maxChassisAcceleration));
+    public Command getTrajectoryCommand(PathPlannerPath trajectory, Subsystem... requirements) {
+        return getPathCommand(trajectory, false, requirements);
     }
 
     public Pose2d getPose() {
@@ -303,7 +327,7 @@ public class SwerveDrive {
     }
 
     public Rotation2d getGyroHeading() {
-        return Rotation2d.fromDegrees(gyro.getYaw());
+        return Rotation2d.fromDegrees(gyro.getYaw().getValue());
     }
 
     public Rotation2d getHoldAngle() {
