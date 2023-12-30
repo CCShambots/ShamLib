@@ -2,7 +2,7 @@ package frc.robot.ShamLib.swerve;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.UnaryOperator;
 
-public class DriveCommand extends CommandBase{
+public class DriveCommand extends Command{
     private final SwerveDrive drivetrain;
     private final DoubleSupplier xSupplier;
     private final DoubleSupplier ySupplier;

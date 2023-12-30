@@ -1,12 +1,12 @@
 package frc.robot.ShamLib;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class AutonomousLoader<C extends CommandBase, E extends Enum<E>> {
+public class AutonomousLoader<C extends Command, E extends Enum<E>> {
     Map<E, C> autoRoutes = new HashMap<>();
 
     private final SendableChooser chooser;

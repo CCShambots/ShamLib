@@ -1,12 +1,12 @@
 package frc.robot.ShamLib.Candle;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.Command;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class PulseSpeedUpCommand extends CommandBase {
+public class PulseSpeedUpCommand extends Command {
 
     private final CANdleEX candle;
     private final RGB onRGB;
