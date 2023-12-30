@@ -1,4 +1,4 @@
-package frc.robot.ShamLib.motors.pro;
+package frc.robot.ShamLib.motors.talonfx;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
