@@ -22,9 +22,9 @@ public class VelocityTalonFX extends EnhancedTalonFX {
 
     TalonFXConfiguration config = new TalonFXConfiguration();
 
-    config.Slot0 = configurePIDLoop(gains);
+    configurePIDLoop(config.Slot0, gains);
 
-    getConfigurator().apply(config);
+    applyConfiguration(config);
   }
 
   /**

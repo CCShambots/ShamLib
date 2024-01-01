@@ -7,6 +7,8 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 public class MotionMagicTalonFX extends EnhancedTalonFX {
   private double target; // In output units
 
+  private MotionMagicVoltage mmReq = new MotionMagicVoltage(0);
+
   /**
    * Constructor for a motion magic configured TalonFX
    *
@@ -29,18 +31,16 @@ public class MotionMagicTalonFX extends EnhancedTalonFX {
 
     TalonFXConfiguration config = new TalonFXConfiguration();
 
-    config.Slot0 = configurePIDLoop(gains);
+    configurePIDLoop(config.Slot0, gains);
 
     // Set the acceleration and cruise velocity - see documentation
-    MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
+    MotionMagicConfigs motionMagicConfigs = config.MotionMagic;
 
     motionMagicConfigs.MotionMagicAcceleration = maxAccel;
     motionMagicConfigs.MotionMagicCruiseVelocity = maxVel;
     motionMagicConfigs.MotionMagicJerk = jerk;
 
-    config.MotionMagic = motionMagicConfigs;
-
-    getConfigurator().apply(config);
+    applyConfiguration(config);
   }
 
   public MotionMagicTalonFX(
@@ -114,9 +114,8 @@ public class MotionMagicTalonFX extends EnhancedTalonFX {
    */
   public void setTarget(double target) {
     this.target = target;
-    setControl(new MotionMagicVoltage(outputToTicks(target)).withSlot(0));
+    setControl(mmReq.withPosition(outputToTicks(target)).withSlot(0));
   }
-
   /**
    * Returns the target of the motor in output units
    *

@@ -1,7 +1,9 @@
 package frc.robot.ShamLib.motors.talonfx;
 
+import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -47,6 +49,17 @@ public class EnhancedTalonFX extends TalonFX {
     config.NeutralMode = neutralMode;
     config.Inverted = invertedValue;
     getConfigurator().apply(config);
+  }
+
+  protected void applyConfiguration(TalonFXConfiguration config) {
+    StatusCode status = StatusCode.StatusCodeNotInitialized;
+    for (int i = 0; i < 5; ++i) {
+      status = getConfigurator().apply(config);
+      if (status.isOK()) break;
+    }
+    if (!status.isOK()) {
+      System.out.println("Could not configure device. Error: " + status.toString());
+    }
   }
 
   /**
@@ -113,9 +126,9 @@ public class EnhancedTalonFX extends TalonFX {
    *
    * @param gains PIDF gains
    */
-  public Slot0Configs configurePIDLoop(PIDSVGains gains) {
+  public Slot0Configs configurePIDLoop(Slot0Configs slot0, PIDSVGains gains) {
     // Set the motion magic gains in slot0
-    Slot0Configs pidConfigs = new Slot0Configs();
+    Slot0Configs pidConfigs = slot0;
     pidConfigs.kS = gains.getS();
     pidConfigs.kV = gains.getV();
     pidConfigs.kP = gains.getP();
