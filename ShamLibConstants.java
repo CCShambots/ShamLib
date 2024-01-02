@@ -12,4 +12,15 @@ public class ShamLibConstants {
     // How close the modules must stay to reset the modules successfully
     public static final double ALLOWED_STOPPED_MODULE_DIFF = .2; // degrees
   }
+
+  public static enum BuildMode {
+    /** Running on a real robot. */
+    REAL,
+
+    /** Running a physics simulator. */
+    SIM,
+
+    /** Replaying from a log file. */
+    REPLAY
+  }
 }

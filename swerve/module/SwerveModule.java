@@ -11,14 +11,13 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 import java.util.function.BooleanSupplier;
-
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveModule implements Sendable {
 
   private final SwerveModuleIO io;
   private final SwerveModuleInputsAutoLogged inputs = new SwerveModuleInputsAutoLogged();
-  
+
   private final String moduleName;
 
   private final Rotation2d encoderOffset;
@@ -29,6 +28,8 @@ public class SwerveModule implements Sendable {
 
   private final Translation2d moduleOffset;
 
+  private double lastPositionMeters = 0.0; // Used for delta calculation
+
   public SwerveModule(
       SwerveModuleIO io,
       String name,
@@ -37,11 +38,10 @@ public class SwerveModule implements Sendable {
       PIDSVGains driveGains,
       PIDSVGains turnGains,
       double maxTurnVelo,
-      double maxTurnAccel
-    ) {
+      double maxTurnAccel) {
 
     this.io = io;
-    
+
     this.moduleOffset = moduleInfo.offset;
 
     this.moduleName = name;
@@ -60,18 +60,8 @@ public class SwerveModule implements Sendable {
       PIDSVGains driveGains,
       PIDSVGains turnGains,
       double maxTurnVelo,
-      double maxTurnAccel
-      ) {
-      this(
-        io,
-        name,
-        "",
-        info,
-        driveGains,
-        turnGains,
-        maxTurnVelo,
-        maxTurnAccel
-        );
+      double maxTurnAccel) {
+    this(io, name, "", info, driveGains, turnGains, maxTurnVelo, maxTurnAccel);
   }
 
   public void update() {
@@ -138,14 +128,11 @@ public class SwerveModule implements Sendable {
 
   public Rotation2d getAbsoluteAngle() {
     return Rotation2d.fromDegrees(
-        normalizeDegrees(
-            inputs.turnEncoderPos - encoderOffset.getDegrees()));
+        normalizeDegrees(inputs.turnEncoderPos - encoderOffset.getDegrees()));
   }
 
   public void pullAbsoluteAngle() {
-    io.resetTurnMotorPosition(
-        normalizeDegrees(
-            inputs.turnEncoderPos - encoderOffset.getDegrees()));
+    io.resetTurnMotorPosition(normalizeDegrees(inputs.turnEncoderPos - encoderOffset.getDegrees()));
   }
 
   public void resetAngle(Rotation2d angle) {
@@ -158,6 +145,15 @@ public class SwerveModule implements Sendable {
 
   public double getTurnMotorVelo() {
     return inputs.turnMotorVelocity;
+  }
+
+  /** Returns the module position delta since the last call to this method. */
+  public SwerveModulePosition getPositionDelta() {
+    var delta =
+        new SwerveModulePosition(
+            getCurrentPosition().distanceMeters - lastPositionMeters, getTurnAngle());
+    lastPositionMeters = getCurrentPosition().distanceMeters;
+    return delta;
   }
 
   /**
@@ -180,18 +176,13 @@ public class SwerveModule implements Sendable {
     builder.setSmartDashboardType("Swerve Module");
 
     builder.addDoubleProperty("Angle", () -> getTurnAngle().getDegrees(), null);
-    builder.addDoubleProperty(
-        "Raw encoder angle", () -> inputs.turnEncoderPos , null);
+    builder.addDoubleProperty("Raw encoder angle", () -> inputs.turnEncoderPos, null);
     builder.addDoubleProperty(
         "Angle (wrapped - encoder)",
-        () ->
-            normalizeDegrees(
-                inputs.turnEncoderPos - encoderOffset.getDegrees()),
+        () -> normalizeDegrees(inputs.turnEncoderPos - encoderOffset.getDegrees()),
         null);
     builder.addDoubleProperty(
-        "Position error",
-        () -> Math.abs(inputs.turnMotorTarget - inputs.turnMotorAngle),
-        null);
+        "Position error", () -> Math.abs(inputs.turnMotorTarget - inputs.turnMotorAngle), null);
     builder.addDoubleProperty("Target Angle", () -> targetState.angle.getDegrees(), null);
     builder.addDoubleProperty("Velocity", () -> getDriveMotorRate(), null);
     builder.addDoubleProperty("Target Velocity", () -> targetState.speedMetersPerSecond, null);

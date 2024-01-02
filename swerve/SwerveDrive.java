@@ -1,8 +1,6 @@
 package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.Pigeon2Configuration;
-import com.ctre.phoenix6.hardware.Pigeon2;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -16,35 +14,50 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
+import frc.robot.ShamLib.ShamLibConstants.BuildMode;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
+import frc.robot.ShamLib.swerve.gyro.GyroIO;
+import frc.robot.ShamLib.swerve.gyro.GyroIOReal;
+import frc.robot.ShamLib.swerve.gyro.GyroInputsAutoLogged;
 import frc.robot.ShamLib.swerve.module.ModuleInfo;
 import frc.robot.ShamLib.swerve.module.SwerveModule;
+import frc.robot.ShamLib.swerve.module.SwerveModuleIO;
+import frc.robot.ShamLib.swerve.module.SwerveModuleIOReal;
+import frc.robot.ShamLib.swerve.module.SwerveModuleIOSim;
+import frc.robot.ShamLib.swerve.odometry.SwerveOdometry;
+import frc.robot.ShamLib.swerve.odometry.SwerveOdometryReal;
+import frc.robot.ShamLib.swerve.odometry.SwerveOdometrySim;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import org.littletonrobotics.junction.Logger;
 
 public class SwerveDrive {
 
   protected final List<SwerveModule> modules;
+
+  protected final GyroIO gyroIO;
+  protected final GyroInputsAutoLogged gyroInputs = new GyroInputsAutoLogged();
+
+  private final BuildMode buildMode;
+
+  protected final SwerveOdometry odometry;
+
   protected final SwerveDriveKinematics kDriveKinematics;
   protected final double maxChassisSpeed;
   protected final double maxChassisAcceleration;
   protected final double maxChassisRotationVel;
   protected final double maxChassisRotationAccel;
   private int numModules = 0;
-  private final Pigeon2 gyro;
   private Rotation2d rotationOffset;
   private Rotation2d holdAngle;
-
-  private final SwerveDrivePoseEstimator odometry;
 
   private boolean fieldRelative = true;
 
@@ -56,6 +69,9 @@ public class SwerveDrive {
   private final PIDGains translationGains;
   private final PIDGains rotationGains;
   private final double driveBaseRadius; // In meters
+
+  // Pose used for simulation
+  private Pose2d simPose;
 
   /**
    * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
@@ -75,6 +91,7 @@ public class SwerveDrive {
    * @param moduleInfos Array of module infos, one for each module
    */
   public SwerveDrive(
+      BuildMode mode,
       int pigeon2ID,
       PIDSVGains moduleDriveGains,
       PIDSVGains moduleTurnGains,
@@ -93,6 +110,8 @@ public class SwerveDrive {
       Subsystem subsystem,
       ModuleInfo... moduleInfos) {
 
+    this.buildMode = mode;
+
     this.extraTelemetry = extraTelemetry;
     this.maxChassisSpeed = maxChassisSpeed;
     this.maxChassisAcceleration = maxChassisAccel;
@@ -102,8 +121,6 @@ public class SwerveDrive {
     this.translationGains = translationGains;
     this.rotationGains = autoThetaGains;
 
-    gyro = new Pigeon2(pigeon2ID, gyroCanbus);
-
     modules = new ArrayList<>();
     Translation2d[] offsets = new Translation2d[moduleInfos.length];
     for (int i = 0; i < moduleInfos.length; i++) {
@@ -111,34 +128,69 @@ public class SwerveDrive {
       ModuleInfo m = moduleInfos[i];
       offsets[i] = m.offset;
 
+      SwerveModuleIO io = new SwerveModuleIO() {};
+
+      switch (mode) {
+        case REAL:
+          io =
+              new SwerveModuleIOReal(
+                  gyroCanbus,
+                  m,
+                  moduleDriveGains,
+                  moduleTurnGains,
+                  maxModuleTurnVelo,
+                  maxModuleTurnAccel,
+                  currentLimit);
+          break;
+        case SIM:
+          io =
+              new SwerveModuleIOSim(
+                  gyroCanbus,
+                  m,
+                  moduleDriveGains,
+                  moduleTurnGains,
+                  maxModuleTurnVelo,
+                  maxModuleTurnAccel,
+                  currentLimit);
+        default:
+          break;
+      }
+
       modules.add(
           new SwerveModule(
+              io,
               "Module-" + numModules,
               moduleCanbus,
               m,
               moduleDriveGains,
               moduleTurnGains,
               maxModuleTurnVelo,
-              maxModuleTurnAccel,
-              currentLimit
-              ));
+              maxModuleTurnAccel));
 
       if (extraTelemetry) {
         SmartDashboard.putData("Module-" + i, modules.get(i));
       }
     }
 
-    Pigeon2Configuration pigeonConfig = new Pigeon2Configuration();
-    gyro.getConfigurator().apply(pigeonConfig);
+    kDriveKinematics = new SwerveDriveKinematics(offsets);
+
+    switch (mode) {
+      case REAL:
+        gyroIO = new GyroIOReal(pigeon2ID, gyroCanbus);
+        odometry =
+            new SwerveOdometryReal(
+                new SwerveDrivePoseEstimator(
+                    kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
+        break;
+
+      default:
+        odometry = new SwerveOdometrySim(kDriveKinematics, modules);
+        gyroIO = new GyroIO() {};
+        break;
+    }
 
     rotationOffset = getGyroHeading();
     holdAngle = new Rotation2d(rotationOffset.getRadians());
-
-    kDriveKinematics = new SwerveDriveKinematics(offsets);
-
-    odometry =
-        new SwerveDrivePoseEstimator(
-            kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d());
 
     field = new Field2d();
 
@@ -164,28 +216,42 @@ public class SwerveDrive {
 
   /*MUST BE CALLED PERIODICALLY */
   public void update() {
-    for(SwerveModule m : modules) {
+    gyroIO.updateInputs(gyroInputs);
+    Logger.processInputs("Gyro", gyroInputs);
+
+    for (SwerveModule m : modules) {
       m.update();
     }
+
+    updateOdometry();
   }
 
   public Rotation2d getPitch() {
-    return Rotation2d.fromDegrees(gyro.getPitch().getValue());
+    return gyroInputs.gyroPitch;
   }
 
   public Rotation2d getRoll() {
-    return Rotation2d.fromDegrees(gyro.getRoll().getValue());
+    return gyroInputs.gyroRoll;
   }
 
   public void addVisionMeasurement(Pose2d pose) {
     if (extraTelemetry) field.getObject("vision").setPose(pose);
 
-    odometry.addVisionMeasurement(pose, Timer.getFPGATimestamp());
+    odometry.addVisionMeasurement(pose);
   }
 
   /** Updates the odometry pose estimator. THIS MUST BE CALLED PERIODICALLY */
-  public void updateOdometry() {
-    odometry.update(getCurrentAngle(), getModulePositions());
+  private void updateOdometry() {
+    switch (buildMode) {
+      case SIM:
+        // Update the odometry for sim (everything it needs is already passed in in the constructor)
+        odometry.updatePose();
+        break;
+      default:
+        // Update odometry normally if being fed data from a real robot
+        odometry.updatePose(getCurrentAngle(), getModulePositions());
+        break;
+    }
   }
 
   public double[] getModuleAngles() {
@@ -350,11 +416,11 @@ public class SwerveDrive {
   }
 
   public Pose2d getPose() {
-    return odometry.getEstimatedPosition();
+    return odometry.getPose();
   }
 
   public Rotation2d getGyroHeading() {
-    return Rotation2d.fromDegrees(gyro.getYaw().getValue());
+    return gyroInputs.gyroYaw;
   }
 
   public Rotation2d getHoldAngle() {
@@ -389,7 +455,7 @@ public class SwerveDrive {
 
   // TODO: Make this play nice with the odometry. Need to test if this is even an issue
   public void resetGyro(Rotation2d angle) {
-    gyro.setYaw(angle.getDegrees());
+    gyroIO.setGyroYaw(angle);
     rotationOffset = new Rotation2d();
     holdAngle = angle;
   }
@@ -404,7 +470,7 @@ public class SwerveDrive {
 
   public void resetOdometryPose(Pose2d newPose) {
     resetGyro(newPose.getRotation());
-    odometry.resetPosition(newPose.getRotation(), getModulePositions(), newPose);
+    odometry.resetPose(newPose, getModulePositions());
   }
 
   public void resetOdometryPose() {
