@@ -10,6 +10,7 @@ import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.util.*;
+import org.littletonrobotics.junction.Logger;
 
 public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
   private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
@@ -21,7 +22,9 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
   private final double transitionTimeOut = transitionTimeout;
   private final E undeterminedState;
   private E currentState;
+
   private boolean enabled;
+
   private final Class<E> enumType;
   private final List<StateMachine<?>> subsystems;
 
@@ -328,6 +331,19 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     return currentFlags;
   }
 
+  public final String[] getCurrentFlagsAsArray() {
+    int n = getCurrentFlags().size();
+    String arr[] = new String[n];
+
+    int i = 0;
+    for (E flag : getCurrentFlags()) {
+      arr[i] = flag.toString();
+      i++;
+    }
+
+    return arr;
+  }
+
   /**
    * Determine whether a state is currently an active flag state
    *
@@ -377,7 +393,22 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
       updateTransitioning();
     }
 
+    recordLogs();
     update();
+  }
+
+  private void recordLogs() {
+    Logger.recordOutput(
+        getName() + "/desired",
+        isTransitioning() ? getCurrentTransition().getEndState().name() : getState().name());
+
+    Logger.recordOutput(getName() + "/state", getState().toString());
+
+    Logger.recordOutput(getName() + "/transitioning", isTransitioning());
+    Logger.recordOutput(getName() + "/flags", getCurrentFlagsAsArray());
+    Logger.recordOutput(getName(), getCurrentFlagsAsArray());
+
+    Logger.recordOutput(getName() + "/enabled", enabled);
   }
 
   protected final void setState(E state) {
@@ -439,31 +470,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
   public final void initSendable(SendableBuilder builder) {
     super.initSendable(builder);
 
-    builder.setSmartDashboardType("Stated subsystem");
-
-    builder.addStringProperty("Name", this::getName, null);
-    builder.addStringProperty("Current State", () -> getState().name(), null);
-    builder.addStringProperty(
-        "Desired State",
-        () -> isTransitioning() ? getCurrentTransition().getEndState().name() : getState().name(),
-        null);
-    builder.addStringArrayProperty(
-        "Current Flag States",
-        () -> {
-          int n = getCurrentFlags().size();
-          String arr[] = new String[n];
-
-          int i = 0;
-          for (E flag : getCurrentFlags()) {
-            arr[i] = flag.toString();
-            i++;
-          }
-
-          return arr;
-        },
-        null);
-    builder.addBooleanProperty("Transitioning", this::isTransitioning, null);
-    builder.addBooleanProperty("Enabled", () -> enabled, null);
+    builder.setSmartDashboardType("State Machine");
 
     additionalSendableData(builder);
   }
