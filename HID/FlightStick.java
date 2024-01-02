@@ -1,6 +1,6 @@
-package frc.robot.ShamLib;
+package frc.robot.ShamLib.HID;
 
-import static frc.robot.ShamLib.FlightStick.Button.*;
+import static frc.robot.ShamLib.HID.FlightStick.Button.*;
 
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;

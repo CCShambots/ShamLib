@@ -1,4 +1,4 @@
-package frc.robot.ShamLib;
+package frc.robot.ShamLib.HID;
 
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -16,6 +16,11 @@ public class CommandFlightStick extends CommandGenericHID {
   public CommandFlightStick(int port) {
     super(port);
     hid = new FlightStick(port);
+  }
+
+  public CommandFlightStick(int port, FlightStick hid) {
+    super(port);
+    this.hid = hid;
   }
 
   /**

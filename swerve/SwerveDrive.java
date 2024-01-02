@@ -3,8 +3,11 @@ package frc.robot.ShamLib.swerve;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathHolonomic;
+import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.pathfinding.Pathfinding;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.PathPlannerLogging;
 import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -32,11 +35,11 @@ import frc.robot.ShamLib.swerve.module.SwerveModuleIOSim;
 import frc.robot.ShamLib.swerve.odometry.SwerveOdometry;
 import frc.robot.ShamLib.swerve.odometry.SwerveOdometryReal;
 import frc.robot.ShamLib.swerve.odometry.SwerveOdometrySim;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveDrive {
@@ -56,7 +59,7 @@ public class SwerveDrive {
   protected final double maxChassisRotationVel;
   protected final double maxChassisRotationAccel;
   private int numModules = 0;
-  private Rotation2d rotationOffset;
+  @AutoLogOutput private Rotation2d rotationOffset;
   private Rotation2d holdAngle;
 
   private boolean fieldRelative = true;
@@ -69,9 +72,6 @@ public class SwerveDrive {
   private final PIDGains translationGains;
   private final PIDGains rotationGains;
   private final double driveBaseRadius; // In meters
-
-  // Pose used for simulation
-  private Pose2d simPose;
 
   /**
    * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
@@ -212,6 +212,20 @@ public class SwerveDrive {
             driveBaseRadius,
             new ReplanningConfig()),
         subsystem);
+
+    Pathfinding.setPathfinder(new LocalADStarAK());
+
+    PathPlannerLogging.setLogActivePathCallback(
+        (activePath) -> {
+          Logger.recordOutput(
+              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+        });
+
+    PathPlannerLogging.setLogTargetPoseCallback(
+        (targetPose) -> {
+          System.out.println(targetPose);
+          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+        });
   }
 
   /*MUST BE CALLED PERIODICALLY */
@@ -295,19 +309,6 @@ public class SwerveDrive {
     return positions;
   }
 
-  /** Should be called periodically if you want the field to regularly be updated */
-  public void updateField2dObject() {
-    Pose2d robotPose = getPose();
-    field.setRobotPose(robotPose);
-
-    if (extraTelemetry) {
-      // Send each of the module poses to the dashboard as well
-      for (SwerveModule e : modules) {
-        field.getObject(e.getModuleName()).setPose(calculateModulePose(e, robotPose));
-      }
-    }
-  }
-
   public double[] getModuleAbsoluteAngles() {
     double[] out = new double[4];
 
@@ -316,14 +317,6 @@ public class SwerveDrive {
     }
 
     return out;
-  }
-
-  private Pose2d calculateModulePose(SwerveModule module, Pose2d robotPose) {
-    SwerveModuleState state = module.getCurrentState();
-    Translation2d offset = module.getModuleOffset();
-
-    return new Pose2d(
-        robotPose.getTranslation().plus(offset), robotPose.getRotation().plus(state.angle));
   }
 
   /**
@@ -366,8 +359,9 @@ public class SwerveDrive {
    * @return Robot angle
    */
   public Rotation2d getCurrentAngle() {
-    // return new Rotation2d(Math.IEEEremainder((getGyroHeading() - rotationOffset) * (Math.PI/180),
-    // Math.PI * 2));
+    if (buildMode == BuildMode.SIM) {
+      return getPose().getRotation();
+    }
     return getGyroHeading().minus(rotationOffset);
   }
 
@@ -483,6 +477,17 @@ public class SwerveDrive {
 
   public List<SwerveModule> getModules() {
     return modules;
+  }
+
+  public Command createPathFindingCommand(Pose2d target) {
+    PathConstraints constraints =
+        new PathConstraints(
+            maxChassisSpeed,
+            maxChassisAcceleration,
+            maxChassisRotationVel,
+            maxChassisRotationAccel);
+
+    return AutoBuilder.pathfindToPose(target, constraints, 0);
   }
 
   public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
