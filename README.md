@@ -10,8 +10,6 @@ Open your WPILib project in the command line and cd into a util package with the
 
 [//]: # (## Documentation)
 
-[//]: # (Here is a link to the full documentation for the SMF - [Documentation]&#40;https://jbfit2014.gitbook.io/frc-smf-documentation/&#41;)
-
 
 ## Unit Testing
 

@@ -1,19 +1,19 @@
-package frc.robot.ShamLib.swerve;
+package frc.robot.ShamLib.swerve.module;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 public class ModuleInfo {
 
-    final int driveMotorID;
-    final int turnMotorID;
-    final int encoderID;
-    final Rotation2d encoderOffset;
-    final Translation2d offset;
-    final double turnRatio;
-    final double driveRatio;
-    final boolean driveInverted;
-    final boolean turnInverted;
+  public final int driveMotorID;
+  public final int turnMotorID;
+  public final int encoderID;
+  public final Rotation2d encoderOffset;
+  public final Translation2d offset;
+  public final double turnRatio;
+  public final double driveRatio;
+  public final boolean driveInverted;
+  public final boolean turnInverted;
 
     public ModuleInfo(int driveMotorID, int turnMotorID, int encoderID, Rotation2d encoderOffset,
                       Translation2d offset, double turnRatio, double driveRatio, boolean driveInverted, boolean turnInverted) {

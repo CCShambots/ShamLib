@@ -22,7 +22,10 @@ import edu.wpi.first.wpilibj2.command.*;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.PIDGains;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
+import frc.robot.ShamLib.swerve.module.ModuleInfo;
+import frc.robot.ShamLib.swerve.module.SwerveModule;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.ArrayList;
@@ -99,10 +102,17 @@ public class SwerveDrive {
             modules.add(new SwerveModule("Module-" + numModules, moduleCanbus, m.turnMotorID, m.driveMotorID,
                     m.encoderID, m.encoderOffset, m.offset, moduleDriveGains, moduleTurnGains, maxModuleTurnVelo, maxModuleTurnAccel, m.turnRatio, m.driveRatio, currentLimit, m.driveInverted, m.turnInverted));
 
-            if(extraTelemetry) {
-                SmartDashboard.putData("Module-"+i, modules.get(i));
-            }
-        }
+      modules.add(
+          new SwerveModule(
+              "Module-" + numModules,
+              moduleCanbus,
+              m,
+              moduleDriveGains,
+              moduleTurnGains,
+              maxModuleTurnVelo,
+              maxModuleTurnAccel,
+              currentLimit
+              ));
 
         gyro.configFactoryDefault();
 
@@ -117,8 +127,72 @@ public class SwerveDrive {
         field = new Field2d();
     }
 
-    public Rotation2d getPitch() {
-        return Rotation2d.fromDegrees(gyro.getPitch());
+    Pigeon2Configuration pigeonConfig = new Pigeon2Configuration();
+    gyro.getConfigurator().apply(pigeonConfig);
+
+    rotationOffset = getGyroHeading();
+    holdAngle = new Rotation2d(rotationOffset.getRadians());
+
+    kDriveKinematics = new SwerveDriveKinematics(offsets);
+
+    odometry =
+        new SwerveDrivePoseEstimator(
+            kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d());
+
+    field = new Field2d();
+
+    this.driveBaseRadius =
+        Math.hypot(
+            moduleInfos[0].offset.getX(),
+            moduleInfos[0].offset.getY()); // Radius of the drive base in meters
+
+    // Configure the auto builder stuff
+    AutoBuilder.configureHolonomic(
+        this::getPose,
+        this::resetOdometryPose,
+        this::getChassisSpeeds,
+        this::drive,
+        new HolonomicPathFollowerConfig(
+            translationGains.toPIDConstants(),
+            autoThetaGains.toPIDConstants(),
+            maxChassisSpeed,
+            driveBaseRadius,
+            new ReplanningConfig()),
+        subsystem);
+  }
+
+  /*MUST BE CALLED PERIODICALLY */
+  public void update() {
+    for(SwerveModule m : modules) {
+      m.update();
+    }
+  }
+
+  public Rotation2d getPitch() {
+    return Rotation2d.fromDegrees(gyro.getPitch().getValue());
+  }
+
+  public Rotation2d getRoll() {
+    return Rotation2d.fromDegrees(gyro.getRoll().getValue());
+  }
+
+  public void addVisionMeasurement(Pose2d pose) {
+    if (extraTelemetry) field.getObject("vision").setPose(pose);
+
+    odometry.addVisionMeasurement(pose, Timer.getFPGATimestamp());
+  }
+
+  /** Updates the odometry pose estimator. THIS MUST BE CALLED PERIODICALLY */
+  public void updateOdometry() {
+    odometry.update(getCurrentAngle(), getModulePositions());
+  }
+
+  public double[] getModuleAngles() {
+
+    double[] angles = new double[numModules];
+
+    for (int i = 0; i < modules.size(); i++) {
+      angles[i] = modules.get(i).getCurrentState().angle.getDegrees();
     }
 
     public Rotation2d getRoll() {
