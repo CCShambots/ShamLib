@@ -48,6 +48,8 @@ public class SwerveModule implements Sendable {
 
     this.encoderOffset = moduleInfo.encoderOffset;
 
+    io.updateInputs(inputs);
+
     pullAbsoluteAngle();
 
     setDesiredState(new SwerveModuleState(0, getTurnAngle()));

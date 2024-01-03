@@ -59,7 +59,7 @@ public class SwerveDrive {
   protected final double maxChassisRotationVel;
   protected final double maxChassisRotationAccel;
   private int numModules = 0;
-  @AutoLogOutput private Rotation2d rotationOffset;
+  @AutoLogOutput private Rotation2d rotationOffset = new Rotation2d();
   private Rotation2d holdAngle;
 
   private boolean fieldRelative = true;
@@ -134,7 +134,7 @@ public class SwerveDrive {
         case REAL:
           io =
               new SwerveModuleIOReal(
-                  gyroCanbus,
+                  moduleCanbus,
                   m,
                   moduleDriveGains,
                   moduleTurnGains,
@@ -145,7 +145,7 @@ public class SwerveDrive {
         case SIM:
           io =
               new SwerveModuleIOSim(
-                  gyroCanbus,
+                  moduleCanbus,
                   m,
                   moduleDriveGains,
                   moduleTurnGains,
