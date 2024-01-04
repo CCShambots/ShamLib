@@ -182,7 +182,13 @@ public class SwerveDrive {
                 new SwerveDrivePoseEstimator(
                     kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
         break;
-
+      case REPLAY:
+        gyroIO = new GyroIO() {};
+        odometry =
+            new SwerveOdometryReal(
+                new SwerveDrivePoseEstimator(
+                    kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
+        break;
       default:
         odometry = new SwerveOdometrySim(kDriveKinematics, modules);
         gyroIO = new GyroIO() {};

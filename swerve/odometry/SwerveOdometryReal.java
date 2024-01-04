@@ -30,5 +30,7 @@ public class SwerveOdometryReal implements SwerveOdometry {
   }
 
   @Override
-  public void updatePose(Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {}
+  public void updatePose(Rotation2d gyroAngle, SwerveModulePosition[] modulePositions) {
+    odometry.update(gyroAngle, modulePositions);
+  }
 }
