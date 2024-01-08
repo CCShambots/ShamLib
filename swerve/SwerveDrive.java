@@ -206,18 +206,20 @@ public class SwerveDrive {
             moduleInfos[0].offset.getY()); // Radius of the drive base in meters
 
     // Configure the auto builder stuff
-    AutoBuilder.configureHolonomic(
-        this::getPose,
-        this::resetOdometryPose,
-        this::getChassisSpeeds,
-        this::drive,
-        new HolonomicPathFollowerConfig(
-            translationGains.toPIDConstants(),
-            autoThetaGains.toPIDConstants(),
-            maxChassisSpeed,
-            driveBaseRadius,
-            new ReplanningConfig()),
-        subsystem);
+    if (!AutoBuilder.isConfigured()) {
+      AutoBuilder.configureHolonomic(
+          this::getPose,
+          this::resetOdometryPose,
+          this::getChassisSpeeds,
+          this::drive,
+          new HolonomicPathFollowerConfig(
+              translationGains.toPIDConstants(),
+              autoThetaGains.toPIDConstants(),
+              maxChassisSpeed,
+              driveBaseRadius,
+              new ReplanningConfig()),
+          subsystem);
+    }
 
     Pathfinding.setPathfinder(new LocalADStarAK());
 

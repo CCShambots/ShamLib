@@ -471,6 +471,7 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     super.initSendable(builder);
 
     builder.setSmartDashboardType("State Machine");
+    builder.addStringProperty("State", () -> getState().name(), null);
 
     additionalSendableData(builder);
   }
