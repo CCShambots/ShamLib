@@ -218,6 +218,8 @@ public class SwerveDrive {
               maxChassisSpeed,
               driveBaseRadius,
               new ReplanningConfig()),
+          // TODO: actually use this
+          () -> false,
           subsystem);
     }
 
@@ -410,6 +412,8 @@ public class SwerveDrive {
             maxChassisSpeed,
             driveBaseRadius,
             new ReplanningConfig(),
+            // TODO: actually use this
+            () -> false,
             requirements));
   }
 
