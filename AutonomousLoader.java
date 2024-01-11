@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import java.util.HashMap;
 import java.util.Map;
 
+@Deprecated
 public class AutonomousLoader<C extends Command, E extends Enum<E>> {
   Map<E, C> autoRoutes = new HashMap<>();
 

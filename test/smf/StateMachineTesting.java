@@ -1,6 +1,5 @@
 package frc.robot.ShamLib.test.smf;
 
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.SMF.StateMachine;
@@ -133,9 +132,6 @@ class ExampleStateMachine extends StateMachine<ExampleState> {
   protected void determineSelf() {
     setState(ExampleState.B);
   }
-
-  @Override
-  protected void additionalSendableData(SendableBuilder builder) {}
 }
 
 class DisabledInstantCommand extends InstantCommand {
