@@ -9,8 +9,8 @@ import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.util.*;
-
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
   private final DirectionalEnumGraph<E, TransitionBase<E>> transitionGraph;
@@ -27,6 +27,9 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
   private final Class<E> enumType;
   private final List<StateMachine<?>> subsystems;
+
+  private final LoggedDashboardChooser<E> stateChooser;
+  private E lastChooserRequest;
 
   /**
    * Instantiate a new State Machine
@@ -45,10 +48,25 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     currentFlags = new HashSet<>();
     stateCommands = new HashMap<>();
     subsystems = new ArrayList<>();
+    stateChooser = new LoggedDashboardChooser<>(name + "State Chooser");
+    lastChooserRequest = undeterminedState;
+
+    initStateChooser();
+
     setName(name);
 
     transitionGraph = new DirectionalEnumGraph<>(enumType);
     enabled = false;
+  }
+
+  private void initStateChooser() {
+    stateChooser.addDefaultOption(undeterminedState.name(), undeterminedState);
+
+    for (E state : enumType.getEnumConstants()) {
+      if (state != undeterminedState) {
+        stateChooser.addOption(state.name(), state);
+      }
+    }
   }
 
   /**
@@ -418,12 +436,20 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
 
   @Override
   public final void periodic() {
+    E chooserRequest = stateChooser.get();
+
     if (enabled) {
       updateTransitioning();
+
+      if (lastChooserRequest != chooserRequest) {
+        requestTransition(chooserRequest);
+      }
     }
 
     recordLogs();
     update();
+
+    lastChooserRequest = chooserRequest;
   }
 
   private void recordLogs() {
@@ -497,11 +523,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
    */
   protected abstract void determineSelf();
 
-  //Override this to any extra logged values to the logger in this method
+  // Override this to any extra logged values to the logger in this method
   protected void logAdditionalOutputs() {}
 
   public Map<String, Sendable> additionalSendables() {
     return new HashMap<>();
   }
-
 }
