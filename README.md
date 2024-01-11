@@ -10,12 +10,10 @@ Open your WPILib project in the command line and cd into a util package with the
 
 [//]: # (## Documentation)
 
-[//]: # (Here is a link to the full documentation for the SMF - [Documentation]&#40;https://jbfit2014.gitbook.io/frc-smf-documentation/&#41;)
-
 
 ## Unit Testing
 
-To run unit tests in a robot project from the shamlib tests, add the following to your build.gradle: 
+To run unit tests in a robot project from the shamlib tests, add the following to your build.gradle:
 ```
 task testShamLib(type:Exec) {
 workingDir 'src/main/java/frc/robot/ShamLib/test'
