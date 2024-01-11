@@ -3,13 +3,13 @@ package frc.robot.ShamLib.SMF;
 import static frc.robot.ShamLib.ShamLibConstants.SMF.transitionTimeout;
 
 import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.*;
 import frc.robot.ShamLib.SMF.graph.DirectionalEnumGraph;
 import frc.robot.ShamLib.SMF.transitions.CommandTransition;
 import frc.robot.ShamLib.SMF.transitions.TransitionBase;
 import java.util.*;
+
 import org.littletonrobotics.junction.Logger;
 
 public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
@@ -409,6 +409,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     Logger.recordOutput(getName(), getCurrentFlagsAsArray());
 
     Logger.recordOutput(getName() + "/enabled", enabled);
+
+    logAdditionalOutputs();
   }
 
   protected final void setState(E state) {
@@ -466,20 +468,11 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
    */
   protected abstract void determineSelf();
 
-  @Override
-  public final void initSendable(SendableBuilder builder) {
-    super.initSendable(builder);
-
-    builder.setSmartDashboardType("State Machine");
-    builder.addStringArrayProperty("Flags", this::getCurrentFlagsAsArray, null);
-    builder.addStringProperty("State", () -> getState().name(), null);
-
-    additionalSendableData(builder);
-  }
-
-  protected void additionalSendableData(SendableBuilder builder) {}
+  //Override this to any extra logged values to the logger in this method
+  protected void logAdditionalOutputs() {}
 
   public Map<String, Sendable> additionalSendables() {
     return new HashMap<>();
   }
+
 }
