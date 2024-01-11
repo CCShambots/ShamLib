@@ -253,8 +253,8 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
       transition.execute();
       transitionTimer.start();
 
-      updateTransitioning();
-    } else {
+      /*updateTransitioning();*/
+    } else if (state != currentState) {
       queuedTransition = transition;
     }
   }
@@ -302,6 +302,35 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
         () -> {},
         (interrupted) -> {},
         () -> getState() == state);
+  }
+
+  /**
+   * A command that will end immediately independent of if it reaches the target state or not
+   *
+   * @param state the state to go to
+   * @param command the command to run upon reaching that state
+   * @return the command to run
+   */
+  public final Command transitionCommand(E state, Command command, boolean waitForState) {
+    if (waitForState) {
+      return transitionCommand(state, command);
+    } else {
+      return new InstantCommand(() -> requestTransition(state, command));
+    }
+  }
+
+  /**
+   * A command that will end immediately independent of if it reaches the target state or not
+   *
+   * @param state the state to go to
+   * @return the command to run
+   */
+  public final Command transitionCommand(E state, boolean waitForState) {
+    if (waitForState) {
+      return transitionCommand(state);
+    } else {
+      return new InstantCommand(() -> requestTransition(state));
+    }
   }
 
   /**
