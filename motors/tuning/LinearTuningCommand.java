@@ -67,12 +67,12 @@ public class LinearTuningCommand extends Command {
         double kV = regression.getSlope();
         double kS = regression.getIntercept();
 
-        System.out.printf("Calculated kV -> %.4f\nCalculated kS -> %.4f%n", kV, kS);
+        System.out.printf("Calculated kV -> %.4f\nCalculated kS -> %.4f", kV, kS);
     }
 
     @Override
     public boolean isFinished() {
-        //to avoid exploding
+        //to avoid overusing memory
         return regression.getN() > 30_000;
     }
 }
