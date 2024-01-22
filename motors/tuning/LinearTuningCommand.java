@@ -3,76 +3,82 @@ package frc.robot.ShamLib.motors.tuning;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
-
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 public class LinearTuningCommand extends Command {
-    private final SimpleRegression regression = new SimpleRegression(true);
+  private final SimpleRegression regression = new SimpleRegression(true);
 
-    private final DoubleConsumer setMotorVoltage;
-    private final DoubleSupplier getMotorVoltage;
-    private final DoubleSupplier getMotorVelocity;
+  private final DoubleConsumer setMotorVoltage;
+  private final DoubleSupplier getMotorVoltage;
+  private final DoubleSupplier getMotorVelocity;
 
-    private final double incrementAmount;
+  private final double incrementAmount;
 
-    private int currentIncrement = 0;
+  private int currentIncrement = 0;
+  private boolean isFinished = false;
 
-    public LinearTuningCommand(
-            Trigger stop,
-            Trigger incrementUp,
-            Trigger incrementDown,
-            DoubleConsumer setMotorVoltage,
-            DoubleSupplier getMotorVelocity,
-            DoubleSupplier getMotorVoltage,
-            double incrementAmount
-    ) {
-        this.incrementAmount = incrementAmount;
+  public LinearTuningCommand(
+      Trigger stop,
+      Trigger incrementUp,
+      Trigger incrementDown,
+      DoubleConsumer setMotorVoltage,
+      DoubleSupplier getMotorVelocity,
+      DoubleSupplier getMotorVoltage,
+      double incrementAmount) {
+    this.incrementAmount = incrementAmount;
 
-        this.setMotorVoltage = setMotorVoltage;
-        this.getMotorVelocity = getMotorVelocity;
-        this.getMotorVoltage = getMotorVoltage;
+    this.setMotorVoltage = setMotorVoltage;
+    this.getMotorVelocity = getMotorVelocity;
+    this.getMotorVoltage = getMotorVoltage;
 
-        stop.onTrue(new InstantCommand(this::cancel));
-        incrementDown.onTrue(new InstantCommand(this::incrementDown));
-        incrementUp.onTrue(new InstantCommand(this::incrementUp));
+    stop.onTrue(new InstantCommand(() -> isFinished = true));
+    incrementDown.onTrue(new InstantCommand(this::incrementDown));
+    incrementUp.onTrue(new InstantCommand(this::incrementUp));
+  }
+
+  private void incrementUp() {
+    if (currentIncrement * incrementAmount < 12 && !isFinished) {
+      currentIncrement++;
     }
+  }
 
-    private void incrementUp() {
-        currentIncrement++;
+  private void incrementDown() {
+    if (currentIncrement * incrementAmount > -12 && !isFinished) {
+      currentIncrement--;
     }
+  }
 
-    private void incrementDown() {
-        currentIncrement--;
-    }
+  @Override
+  public void initialize() {
+    isFinished = false;
+    regression.clear();
+    currentIncrement = 0;
+  }
 
-    @Override
-    public void initialize() {
-        regression.clear();
-        currentIncrement = 0;
-    }
+  @Override
+  public void execute() {
+    regression.addData(getMotorVelocity.getAsDouble(), getMotorVoltage.getAsDouble());
 
-    @Override
-    public void execute() {
-        regression.addData(getMotorVoltage.getAsDouble(), getMotorVelocity.getAsDouble());
+    setMotorVoltage.accept(currentIncrement * incrementAmount);
+  }
 
-        setMotorVoltage.accept(currentIncrement * incrementAmount);
-    }
+  @Override
+  public void end(boolean interrupted) {
+    setMotorVoltage.accept(0);
 
-    @Override
-    public void end(boolean interrupted) {
-        setMotorVoltage.accept(0);
+    double kV = regression.getSlope();
+    double kS = regression.getIntercept();
 
-        double kV = regression.getSlope();
-        double kS = regression.getIntercept();
+    isFinished = true;
 
-        System.out.printf("Calculated kV -> %.4f\nCalculated kS -> %.4f", kV, kS);
-    }
+    System.out.printf("Calculated kV -> %.4f\nCalculated kS -> %.4f", kV, kS);
+  }
 
-    @Override
-    public boolean isFinished() {
-        //to avoid overusing memory
-        return regression.getN() > 30_000;
-    }
+  @Override
+  public boolean isFinished() {
+    // to avoid overusing memory
+    return regression.getN() > 30_000 || isFinished;
+  }
 }
