@@ -39,13 +39,13 @@ public class LinearTuningCommand extends Command {
   }
 
   private void incrementUp() {
-    if (currentIncrement * incrementAmount < 12) {
+    if (currentIncrement * incrementAmount < 12 && !isFinished) {
       currentIncrement++;
     }
   }
 
   private void incrementDown() {
-    if (currentIncrement * incrementAmount > -12) {
+    if (currentIncrement * incrementAmount > -12 && !isFinished) {
       currentIncrement--;
     }
   }
@@ -70,6 +70,8 @@ public class LinearTuningCommand extends Command {
 
     double kV = regression.getSlope();
     double kS = regression.getIntercept();
+
+    isFinished = true;
 
     System.out.printf("Calculated kV -> %.4f\nCalculated kS -> %.4f", kV, kS);
   }
