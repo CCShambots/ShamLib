@@ -6,8 +6,6 @@ import org.littletonrobotics.junction.AutoLog;
 public interface LimelightIO {
   @AutoLog
   public class LimelightInputs {
-    public String name = "UNKNOWN";
-
     public int tv = 0;
     public double tx = 0;
     public double ty = 0;

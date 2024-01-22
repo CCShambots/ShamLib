@@ -11,10 +11,8 @@ public class LimelightIOReal implements LimelightIO {
   private final double[] poseDefault = new double[6];
   private final double[] cropDefault = new double[4];
   private final NetworkTable table;
-  private final String name;
 
   public LimelightIOReal(String name) {
-    this.name = name;
     table = getLimeLightTable(name);
   }
 
@@ -24,8 +22,6 @@ public class LimelightIOReal implements LimelightIO {
 
   @Override
   public void updateInputs(LimelightInputs inputs) {
-    inputs.name = name;
-
     inputs.tv = getInt("tv", 0);
     inputs.tx = getDouble("tx", 0);
     inputs.ty = getDouble("ty", 0);
