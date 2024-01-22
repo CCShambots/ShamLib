@@ -6,7 +6,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
-public class Limelight {
+public class LoggedLimelight {
 
   private final NetworkTable table;
 
@@ -18,12 +18,12 @@ public class Limelight {
    *
    * @param tableID the id of the network table where the limelight will post its data
    */
-  public Limelight(String tableID) {
+  public LoggedLimelight(String tableID) {
     this.table = getLimeLightTable(tableID);
   }
 
   /** Creates a limelight object with the default network table name - "limelight" */
-  public Limelight() {
+  public LoggedLimelight() {
     this.table = getLimeLightTable("limelight");
   }
 
