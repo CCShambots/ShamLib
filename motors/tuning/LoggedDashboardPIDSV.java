@@ -3,6 +3,7 @@ package frc.robot.ShamLib.motors.tuning;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
@@ -16,6 +17,8 @@ public class LoggedDashboardPIDSV implements LoggedDashboardInput {
   private PIDSVGains defaultValue;
   private PIDSVGains value;
   private AtomicBoolean reset = new AtomicBoolean(false);
+
+  private Consumer<PIDSVGains> onChange = null;
 
   private final LoggableInputs inputs =
       new LoggableInputs() {
@@ -58,6 +61,10 @@ public class LoggedDashboardPIDSV implements LoggedDashboardInput {
     Logger.registerDashboardInput(this);
   }
 
+  public void setOnChange(Consumer<PIDSVGains> onChange) {
+    this.onChange = onChange;
+  }
+
   private void putNumbers(double[] numbers) {
     for (int i = 0; i < 5; i++) {
       SmartDashboard.putNumber(key + "/" + valuesOrder.charAt(i), numbers[i]);
@@ -91,6 +98,10 @@ public class LoggedDashboardPIDSV implements LoggedDashboardInput {
     return value;
   }
 
+  public boolean diff(PIDSVGains val) {
+    return !get().equals(val);
+  }
+
   @Override
   public void periodic() {
     if (!Logger.hasReplaySource()) {
@@ -100,9 +111,14 @@ public class LoggedDashboardPIDSV implements LoggedDashboardInput {
 
         SmartDashboard.putBoolean(key + resetPath, reset.get());
       }
+      PIDSVGains dashboardVal = new PIDSVGains(getNumbers());
 
       reset.set(SmartDashboard.getBoolean(key + resetPath, reset.get()));
-      value.set(getNumbers());
+
+      if (diff(dashboardVal) && onChange != null) {
+        value = dashboardVal;
+        onChange.accept(value);
+      }
     }
     Logger.processInputs(prefix, inputs);
   }

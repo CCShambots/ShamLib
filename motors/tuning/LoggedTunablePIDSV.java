@@ -2,6 +2,7 @@ package frc.robot.ShamLib.motors.tuning;
 
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 public class LoggedTunablePIDSV {
 
@@ -26,6 +27,10 @@ public class LoggedTunablePIDSV {
     }
   }
 
+  public void setOnChange(Consumer<PIDSVGains> toRun) {
+    dashboardPIDSV.setOnChange(toRun);
+  }
+
   public void set(PIDSVGains value) {
     dashboardPIDSV.set(value);
   }
@@ -38,7 +43,7 @@ public class LoggedTunablePIDSV {
     return dashboardPIDSV.getDefault();
   }
 
-  public boolean hasChanged(PIDSVGains val) {
+  public boolean diff(PIDSVGains val) {
     return !get().equals(val);
   }
 }
