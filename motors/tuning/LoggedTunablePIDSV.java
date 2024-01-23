@@ -20,7 +20,6 @@ public class LoggedTunablePIDSV {
       return dashboardPIDSV.get();
     } else {
       // reset dashboard number to default and return the default
-      System.out.println("tuning disallowed");
       PIDSVGains defaultValue = dashboardPIDSV.getDefault();
       dashboardPIDSV.set(defaultValue);
       return defaultValue;
