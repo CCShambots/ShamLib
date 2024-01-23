@@ -28,7 +28,7 @@ public class LoggedDashboardPIDSV implements LoggedDashboardInput {
   public LoggedDashboardPIDSV(String key, PIDSVGains defaultValue) {
     this.key = key;
     this.defaultValue = defaultValue;
-    this.value = defaultValue;
+    this.value = defaultValue.clone();
 
     SmartDashboard.putNumberArray(key, SmartDashboard.getNumberArray(key, defaultValue.toArray()));
 

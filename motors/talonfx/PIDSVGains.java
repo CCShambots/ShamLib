@@ -4,7 +4,7 @@ import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import java.util.Arrays;
 
-public class PIDSVGains implements Sendable {
+public class PIDSVGains implements Sendable, Cloneable {
   private double[] gains = new double[5];
 
   public PIDSVGains(double kP, double kI, double kD, double kS, double kV) {
@@ -36,7 +36,6 @@ public class PIDSVGains implements Sendable {
   }
 
   public double[] toArray() {
-    // tis mutable :(
     return gains;
   }
 
@@ -66,6 +65,10 @@ public class PIDSVGains implements Sendable {
     }
 
     return true;
+  }
+
+  public PIDSVGains clone() {
+    return new PIDSVGains(gains.clone());
   }
 
   @Override
