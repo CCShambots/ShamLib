@@ -2,48 +2,74 @@ package frc.robot.ShamLib.motors.talonfx;
 
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import java.util.Arrays;
 
 public class PIDSVGains implements Sendable {
-  private double P;
-  private double I;
-  private double D;
-  private double S;
-  private double V;
+  private double[] gains = new double[5];
 
   public PIDSVGains(double kP, double kI, double kD, double kS, double kV) {
-    this.P = kP;
-    this.I = kI;
-    this.D = kD;
-    this.S = kS;
-    this.V = kV;
+    gains = new double[] {kP, kI, kD, kS, kV};
+  }
+
+  public PIDSVGains(double[] values) {
+    System.arraycopy(values, 0, gains, 0, values.length);
   }
 
   public double getP() {
-    return P;
+    return gains[0];
   }
 
   public double getI() {
-    return I;
+    return gains[1];
   }
 
   public double getD() {
-    return D;
+    return gains[2];
   }
 
   public double getS() {
-    return S;
+    return gains[3];
   }
 
   public double getV() {
-    return V;
+    return gains[4];
+  }
+
+  public double[] toArray() {
+    // tis mutable :(
+    return gains;
+  }
+
+  public void set(double[] values) {
+    System.arraycopy(values, 0, gains, 0, values.length);
   }
 
   @Override
   public void initSendable(SendableBuilder builder) {
-    builder.addDoubleProperty("P", () -> P, (value) -> P = value);
-    builder.addDoubleProperty("I", () -> I, (value) -> I = value);
-    builder.addDoubleProperty("D", () -> D, (value) -> D = value);
-    builder.addDoubleProperty("S", () -> S, (value) -> S = value);
-    builder.addDoubleProperty("V", () -> V, (value) -> V = value);
+    builder.addDoubleProperty("P", this::getP, (value) -> gains[0] = value);
+    builder.addDoubleProperty("I", this::getI, (value) -> gains[1] = value);
+    builder.addDoubleProperty("D", this::getD, (value) -> gains[2] = value);
+    builder.addDoubleProperty("S", this::getS, (value) -> gains[3] = value);
+    builder.addDoubleProperty("V", this::getV, (value) -> gains[4] = value);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    PIDSVGains that = (PIDSVGains) o;
+
+    for (int i = 0; i < this.gains.length; i++) {
+      double diff = Math.abs(this.gains[i] - that.gains[i]);
+
+      if (diff > 0.0000001) return false;
+    }
+
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    return Arrays.hashCode(gains);
   }
 }
