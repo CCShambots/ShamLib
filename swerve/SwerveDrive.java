@@ -35,16 +35,14 @@ import frc.robot.ShamLib.swerve.module.SwerveModule;
 import frc.robot.ShamLib.swerve.module.SwerveModuleIO;
 import frc.robot.ShamLib.swerve.module.SwerveModuleIOReal;
 import frc.robot.ShamLib.swerve.module.SwerveModuleIOSim;
-import frc.robot.ShamLib.swerve.odometry.SwerveOdometry;
-import frc.robot.ShamLib.swerve.odometry.SwerveOdometryReal;
-import frc.robot.ShamLib.swerve.odometry.SwerveOdometrySim;
+import frc.robot.ShamLib.swerve.odometry.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
-import frc.robot.ShamLib.swerve.odometry.SwerveTimestampedOdometryReal;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -270,7 +268,16 @@ public class SwerveDrive {
                     kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
         break;
       default:
-        odometry = new SwerveOdometrySim(kDriveKinematics, modules);
+        if (!useTimestamped) {
+          odometry = new SwerveOdometrySim(kDriveKinematics, modules);
+        }
+        else {
+          odometry = new SwerveTimestampedOdometrySim(
+                  new TimestampedPoseEstimator(stdDevs),
+                  kDriveKinematics,
+                  modules
+          );
+        }
         gyroIO = new GyroIO() {};
         break;
     }
