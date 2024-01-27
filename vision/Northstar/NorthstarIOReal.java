@@ -9,26 +9,19 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 
 public class NorthstarIOReal implements NorthstarIO {
-    private static final int cameraId = 0;
-    private static final int cameraResolutionWidth = 1600;
-    private static final int cameraResolutionHeight = 1200;
-    private static final int cameraAutoExposure = 1;
-    private static final int cameraExposure = 10;
-    private static final int cameraGain = 25;
-
     private final DoubleArraySubscriber observationSubscriber;
 
-    public NorthstarIOReal(String identifier, double aprilTagWidth, AprilTagFieldLayout fieldLayout) {
+    public NorthstarIOReal(String identifier, CameraSettings settings, double aprilTagWidth, AprilTagFieldLayout fieldLayout) {
         System.out.println("[Init] Creating AprilTagVisionIONorthstar (" + identifier + ")");
         var northstarTable = NetworkTableInstance.getDefault().getTable(identifier);
 
         var configTable = northstarTable.getSubTable("config");
-        configTable.getIntegerTopic("camera_id").publish().set(cameraId);
-        configTable.getIntegerTopic("camera_resolution_width").publish().set(cameraResolutionWidth);
-        configTable.getIntegerTopic("camera_resolution_height").publish().set(cameraResolutionHeight);
-        configTable.getIntegerTopic("camera_auto_exposure").publish().set(cameraAutoExposure);
-        configTable.getIntegerTopic("camera_exposure").publish().set(cameraExposure);
-        configTable.getIntegerTopic("camera_gain").publish().set(cameraGain);
+        configTable.getIntegerTopic("camera_id").publish().set(settings.cameraId());
+        configTable.getIntegerTopic("camera_resolution_width").publish().set(settings.cameraResolutionWidth());
+        configTable.getIntegerTopic("camera_resolution_height").publish().set(settings.cameraResolutionHeight());
+        configTable.getIntegerTopic("camera_auto_exposure").publish().set(settings.cameraAutoExposure());
+        configTable.getIntegerTopic("camera_exposure").publish().set(settings.cameraExposure());
+        configTable.getIntegerTopic("camera_gain").publish().set(settings.cameraGain());
         configTable.getDoubleTopic("fiducial_size_m").publish().set(aprilTagWidth);
         try {
             configTable
@@ -47,6 +40,7 @@ public class NorthstarIOReal implements NorthstarIO {
                                 new double[] {}, PubSubOption.keepDuplicates(true), PubSubOption.sendAll(true));
     }
 
+    @Override
     public void updateInputs(NorthstarInputs inputs) {
         var queue = observationSubscriber.readQueue();
         inputs.timestamps = new double[queue.length];

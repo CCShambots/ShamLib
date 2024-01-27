@@ -29,4 +29,24 @@ public interface NorthstarIO {
             }
         }
     }
+
+    public default void updateInputs(NorthstarInputs inputs) {}
+    
+    public record CameraSettings(
+            int cameraId,
+            int cameraResolutionWidth,
+            int cameraResolutionHeight,
+            int cameraAutoExposure,
+            int cameraExposure,
+            int cameraGain
+    ) {
+        public static final CameraSettings DEFAULT = new CameraSettings(
+                0,
+                1600,
+                1200,
+                1,
+                10,
+                25
+        );
+    }
 }
