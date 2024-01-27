@@ -4,7 +4,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
-
 import java.util.List;
 
 public interface SwerveOdometry {
@@ -19,5 +18,6 @@ public interface SwerveOdometry {
 
   public default void addVisionMeasurement(Pose2d pose) {}
 
-  public default void addTimestampedVisionMeasurements(List<TimestampedPoseEstimator.TimestampedVisionUpdate> visionEstimates) {}
+  public default void addTimestampedVisionMeasurements(
+      List<TimestampedPoseEstimator.TimestampedVisionUpdate> visionEstimates) {}
 }

@@ -2,7 +2,6 @@ package frc.robot.ShamLib.swerve;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.commands.FollowPathHolonomic;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.pathfinding.Pathfinding;
@@ -36,13 +35,9 @@ import frc.robot.ShamLib.swerve.module.SwerveModuleIO;
 import frc.robot.ShamLib.swerve.module.SwerveModuleIOReal;
 import frc.robot.ShamLib.swerve.module.SwerveModuleIOSim;
 import frc.robot.ShamLib.swerve.odometry.*;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
-
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -94,49 +89,47 @@ public class SwerveDrive {
    * @param moduleInfos Array of module infos, one for each module
    */
   public SwerveDrive(
-          BuildMode mode,
-          int pigeon2ID,
-          PIDSVGains moduleDriveGains,
-          PIDSVGains moduleTurnGains,
-          double maxChassisSpeed,
-          double maxChassisAccel,
-          double maxChassisRotationVel,
-          double maxChassisRotationAccel,
-          double maxModuleTurnVelo,
-          double maxModuleTurnAccel,
-          PIDGains autoThetaGains,
-          PIDGains translationGains,
-          boolean extraTelemetry,
-          String moduleCanbus,
-          String gyroCanbus,
-          CurrentLimitsConfigs currentLimit,
-          Subsystem subsystem,
-          BooleanSupplier flipTrajectory,
-          ModuleInfo... moduleInfos
-  ) {
+      BuildMode mode,
+      int pigeon2ID,
+      PIDSVGains moduleDriveGains,
+      PIDSVGains moduleTurnGains,
+      double maxChassisSpeed,
+      double maxChassisAccel,
+      double maxChassisRotationVel,
+      double maxChassisRotationAccel,
+      double maxModuleTurnVelo,
+      double maxModuleTurnAccel,
+      PIDGains autoThetaGains,
+      PIDGains translationGains,
+      boolean extraTelemetry,
+      String moduleCanbus,
+      String gyroCanbus,
+      CurrentLimitsConfigs currentLimit,
+      Subsystem subsystem,
+      BooleanSupplier flipTrajectory,
+      ModuleInfo... moduleInfos) {
     this(
-            mode,
-            pigeon2ID,
-            moduleDriveGains,
-            moduleTurnGains,
-            maxChassisSpeed,
-            maxChassisAccel,
-            maxChassisRotationVel,
-            maxChassisRotationAccel,
-            maxModuleTurnVelo,
-            maxModuleTurnAccel,
-            autoThetaGains,
-            translationGains,
-            extraTelemetry,
-            moduleCanbus,
-            gyroCanbus,
-            currentLimit,
-            subsystem,
-            false,
-            flipTrajectory,
-            null,
-            moduleInfos
-            );
+        mode,
+        pigeon2ID,
+        moduleDriveGains,
+        moduleTurnGains,
+        maxChassisSpeed,
+        maxChassisAccel,
+        maxChassisRotationVel,
+        maxChassisRotationAccel,
+        maxModuleTurnVelo,
+        maxModuleTurnAccel,
+        autoThetaGains,
+        translationGains,
+        extraTelemetry,
+        moduleCanbus,
+        gyroCanbus,
+        currentLimit,
+        subsystem,
+        false,
+        flipTrajectory,
+        null,
+        moduleInfos);
   }
 
   /**
@@ -247,17 +240,16 @@ public class SwerveDrive {
         gyroIO = new GyroIOReal(pigeon2ID, gyroCanbus);
         if (!useTimestamped) {
           odometry =
-                  new SwerveOdometryReal(
-                          new SwerveDrivePoseEstimator(
-                                  kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
-        }
-        else {
-          odometry = new SwerveTimestampedOdometryReal(
+              new SwerveOdometryReal(
+                  new SwerveDrivePoseEstimator(
+                      kDriveKinematics, getCurrentAngle(), getModulePositions(), new Pose2d()));
+        } else {
+          odometry =
+              new SwerveTimestampedOdometryReal(
                   new TimestampedPoseEstimator(stdDevs),
                   kDriveKinematics,
                   modules,
-                  this::getCurrentAngle
-          );
+                  this::getCurrentAngle);
         }
         break;
       case REPLAY:
@@ -270,13 +262,10 @@ public class SwerveDrive {
       default:
         if (!useTimestamped) {
           odometry = new SwerveOdometrySim(kDriveKinematics, modules);
-        }
-        else {
-          odometry = new SwerveTimestampedOdometrySim(
-                  new TimestampedPoseEstimator(stdDevs),
-                  kDriveKinematics,
-                  modules
-          );
+        } else {
+          odometry =
+              new SwerveTimestampedOdometrySim(
+                  new TimestampedPoseEstimator(stdDevs), kDriveKinematics, modules);
         }
         gyroIO = new GyroIO() {};
         break;
@@ -345,7 +334,8 @@ public class SwerveDrive {
     return gyroInputs.gyroRoll;
   }
 
-  public void addTimestampedVisionMeasurements(List<TimestampedPoseEstimator.TimestampedVisionUpdate> measurements) {
+  public void addTimestampedVisionMeasurements(
+      List<TimestampedPoseEstimator.TimestampedVisionUpdate> measurements) {
     odometry.addTimestampedVisionMeasurements(measurements);
   }
 
