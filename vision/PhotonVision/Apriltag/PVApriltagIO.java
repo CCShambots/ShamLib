@@ -9,6 +9,7 @@ public interface PVApriltagIO {
     public Pose3d[] cameraPoseEstimates = new Pose3d[0];
     public int[] cameraPoseEstimateIDs = new int[0];
     public Pose3d bestCameraPoseEstimate = new Pose3d();
+    public int bestTagID = 0;
 
     public Pose3d multiTagPoseEstimate = new Pose3d();
 

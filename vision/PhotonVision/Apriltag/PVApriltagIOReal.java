@@ -33,6 +33,7 @@ public class PVApriltagIOReal implements PVApriltagIO {
     if (latest.hasTargets()) {
       inputs.bestCameraPoseEstimate =
           GeomUtil.transform3dToPose3d(latest.getBestTarget().getBestCameraToTarget());
+      inputs.bestTagID = latest.getBestTarget().getFiducialId();
 
       inputs.multiTagPoseEstimate =
           GeomUtil.transform3dToPose3d(latest.getMultiTagResult().estimatedPose.best);
@@ -40,6 +41,7 @@ public class PVApriltagIOReal implements PVApriltagIO {
       inputs.hasTarget = true;
     } else {
       inputs.hasTarget = false;
+      inputs.bestTagID = -1;
     }
   }
 }

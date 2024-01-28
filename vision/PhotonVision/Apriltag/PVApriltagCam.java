@@ -1,14 +1,20 @@
 package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Pair;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import frc.robot.ShamLib.ShamLibConstants;
+import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
 import frc.robot.ShamLib.util.GeomUtil;
 import org.littletonrobotics.junction.Logger;
 
 import java.util.ArrayList;
+import java.util.Optional;
 
 public class PVApriltagCam {
   private final PVApriltagIO io;
@@ -26,12 +32,33 @@ public class PVApriltagCam {
       io.updateInputs(inputs);
       Logger.processInputs(name, inputs);
   }
+  private Matrix<N3, N1> getXYThetaStdDev(Pose3d pose, int[] tagIds) {
+      double totalDistance = 0.0;
+      int nonErrorTags = 0;
 
-  public ArrayList<TimestampedPose> getAllEstimates() {
+      //make the std dev greater based on how far away the tags are (trust estimates from further tags less)
+
+      for (int tagId : tagIds) {
+          var tagOnField = fieldLayout.getTagPose(tagId);
+
+          if (tagOnField.isPresent()) {
+              totalDistance += pose.getTranslation().getDistance(tagOnField.get().getTranslation());
+              nonErrorTags++;
+          }
+      }
+      double avgDistance = totalDistance / nonErrorTags;
+
+      double xyStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
+      double thetaStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
+
+      return VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev);
+  }
+
+  public ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> getAllEstimates() {
       double timestamp = inputs.timestamp;
       Pose3d[] estimates = inputs.cameraPoseEstimates;
       int[] ids = inputs.cameraPoseEstimateIDs;
-      ArrayList<TimestampedPose> out = new ArrayList<>();
+      ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> out = new ArrayList<>();
 
 
       for (int i = 0; i < estimates.length; i++) {
@@ -46,7 +73,7 @@ public class PVApriltagCam {
                   continue;
               }
 
-              out.add(new TimestampedPose(pose, timestamp));
+              out.add(new TimestampedPoseEstimator.TimestampedVisionUpdate(timestamp, pose.toPose2d(), getXYThetaStdDev(pose, ids)));
           }
 
       }
@@ -54,12 +81,32 @@ public class PVApriltagCam {
       return out;
   }
 
-  public TimestampedPose getMultiTagEstimate() {
-      return new TimestampedPose(inputs.multiTagPoseEstimate, inputs.timestamp);
+  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getMultiTagEstimate() {
+      if (inputs.hasTarget) {
+          return Optional.of(
+                  new TimestampedPoseEstimator.TimestampedVisionUpdate(
+                          inputs.timestamp,
+                          inputs.multiTagPoseEstimate.toPose2d(),
+                          getXYThetaStdDev(inputs.multiTagPoseEstimate, inputs.cameraPoseEstimateIDs)
+                  )
+          );
+      }
+
+      return Optional.empty();
   }
 
-  public TimestampedPose getBestPoseEstimate() {
-      return new TimestampedPose(inputs.bestCameraPoseEstimate, inputs.timestamp);
+  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getBestPoseEstimate() {
+      if (inputs.hasTarget) {
+          return Optional.of(
+            new TimestampedPoseEstimator.TimestampedVisionUpdate(
+                  inputs.timestamp,
+                  inputs.bestCameraPoseEstimate.toPose2d(),
+                  getXYThetaStdDev(inputs.bestCameraPoseEstimate, new int[] {inputs.bestTagID})
+            )
+          );
+      }
+
+      return Optional.empty();
   }
 
   private PVApriltagIO getNewIO(ShamLibConstants.BuildMode buildMode, String name) {
@@ -67,24 +114,5 @@ public class PVApriltagCam {
           case REPLAY -> new PVApriltagIO() {};
           default -> new PVApriltagIOReal(name);
       };
-  }
-
-  public record TimestampedPose(
-          Pose3d pose,
-          double timestamp
-  ) {
-      //FRC6328 std dev algo, multiply by coeffs after
-      public static Pair<Double, Double> getXYThetaStdDev(TimestampedPose[] poses, Pose3d from) {
-          double totalDistance = 0.0;
-          for (TimestampedPose tagPose : poses) {
-              totalDistance += tagPose.pose().getTranslation().getDistance(from.getTranslation());
-          }
-          double avgDistance = totalDistance / poses.length;
-
-          double xyStdDev = Math.pow(avgDistance, 2.0) / poses.length;
-          double thetaStdDev = Math.pow(avgDistance, 2.0) / poses.length;
-
-          return new Pair<>(xyStdDev, thetaStdDev);
-      }
   }
 }
