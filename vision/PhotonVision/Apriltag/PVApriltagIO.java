@@ -7,6 +7,7 @@ public interface PVApriltagIO {
   @AutoLog
   public class PVApriltagInputs {
     public Pose3d[] cameraPoseEstimates = new Pose3d[0];
+    public int[] cameraPoseEstimateIDs = new int[0];
     public Pose3d bestCameraPoseEstimate = new Pose3d();
 
     public Pose3d multiTagPoseEstimate = new Pose3d();
