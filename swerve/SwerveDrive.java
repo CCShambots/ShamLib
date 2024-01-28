@@ -416,6 +416,14 @@ public class SwerveDrive {
    * @param speeds chassis speed object to move
    */
   public void drive(ChassisSpeeds speeds, double maxChassisSpeed) {
+    double linearSpeed = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+
+    if (linearSpeed > maxChassisSpeed) {
+      double factor = maxChassisSpeed / linearSpeed;
+
+      speeds.vxMetersPerSecond = speeds.vxMetersPerSecond * factor;
+      speeds.vyMetersPerSecond = speeds.vyMetersPerSecond * factor;
+    }
 
     SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
