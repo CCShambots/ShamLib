@@ -16,6 +16,8 @@ public interface PVApriltagIO {
     public boolean hasTarget = false;
 
     public double timestamp = 0.0;
+
+    public boolean isConnected = false;
   }
 
   public default void updateInputs(PVApriltagInputs inputs) {}

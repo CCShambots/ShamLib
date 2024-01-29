@@ -43,5 +43,7 @@ public class PVApriltagIOReal implements PVApriltagIO {
       inputs.hasTarget = false;
       inputs.bestTagID = -1;
     }
+
+    inputs.isConnected = camera.isConnected();
   }
 }

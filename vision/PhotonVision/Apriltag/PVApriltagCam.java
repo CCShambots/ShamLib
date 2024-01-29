@@ -56,6 +56,10 @@ public class PVApriltagCam {
     return VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev);
   }
 
+  public boolean isConnected() {
+    return inputs.isConnected;
+  }
+
   public ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> getAllEstimates() {
     double timestamp = inputs.timestamp;
     Pose3d[] estimates = inputs.cameraPoseEstimates;
