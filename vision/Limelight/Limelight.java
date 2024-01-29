@@ -1,7 +1,6 @@
 package frc.robot.ShamLib.vision.Limelight;
 
 import frc.robot.ShamLib.ShamLibConstants;
-import frc.robot.ShamLib.vision.LimelightInputsAutoLogged;
 import org.littletonrobotics.junction.Logger;
 
 public class Limelight {

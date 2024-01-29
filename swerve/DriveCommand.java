@@ -34,7 +34,6 @@ public class DriveCommand extends Command {
       DoubleSupplier turnSupplier,
       double deadband,
       UnaryOperator<Double> controllerConversion,
-      boolean useTurning,
       Subsystem subsystem,
       SwerveSpeedLimits... speedLimits) {
     this.drivetrain = drivetrain;
