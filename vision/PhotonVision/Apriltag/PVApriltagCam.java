@@ -62,6 +62,8 @@ public class PVApriltagCam {
     int[] ids = inputs.cameraPoseEstimateIDs;
     ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> out = new ArrayList<>();
 
+    if (!inputs.hasTarget) return out;
+
     for (int i = 0; i < estimates.length; i++) {
       Transform3d estimate = GeomUtil.pose3dToTransform3d(estimates[i]);
       var tagPose = fieldLayout.getTagPose(ids[i]);
