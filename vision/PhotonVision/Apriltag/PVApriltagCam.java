@@ -38,7 +38,7 @@ public class PVApriltagCam {
 
     // make the std dev greater based on how far away the tags are (trust estimates from further
     // tags less)
-    //algorithm from frc6328
+    // algorithm from frc6328
 
     for (int tagId : tagIds) {
       var tagOnField = fieldLayout.getTagPose(tagId);
@@ -79,7 +79,7 @@ public class PVApriltagCam {
 
         out.add(
             new TimestampedPoseEstimator.TimestampedVisionUpdate(
-                timestamp, pose.toPose2d(), getXYThetaStdDev(pose, new int[]{ ids[i] })));
+                timestamp, pose.toPose2d(), getXYThetaStdDev(pose, new int[] {ids[i]})));
       }
     }
 
