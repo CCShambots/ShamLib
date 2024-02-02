@@ -3,12 +3,13 @@ package frc.robot.ShamLib.motors.tuning;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.util.ArrayList;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
-import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 public class LinearTuningCommand extends Command {
-  private final SimpleRegression regression = new SimpleRegression(true);
+  private ArrayList<Double> voltage = new ArrayList<>();
+  private ArrayList<Double> velocity = new ArrayList<>();
 
   private final DoubleConsumer setMotorVoltage;
   private final DoubleSupplier getMotorVoltage;
@@ -53,13 +54,17 @@ public class LinearTuningCommand extends Command {
   @Override
   public void initialize() {
     isFinished = false;
-    regression.clear();
+
+    voltage.clear();
+    velocity.clear();
+
     currentIncrement = 0;
   }
 
   @Override
   public void execute() {
-    regression.addData(getMotorVelocity.getAsDouble(), getMotorVoltage.getAsDouble());
+    velocity.add(getMotorVelocity.getAsDouble());
+    voltage.add(getMotorVoltage.getAsDouble());
 
     setMotorVoltage.accept(currentIncrement * incrementAmount);
   }
@@ -68,8 +73,14 @@ public class LinearTuningCommand extends Command {
   public void end(boolean interrupted) {
     setMotorVoltage.accept(0);
 
-    double kV = regression.getSlope();
-    double kS = regression.getIntercept();
+    var regression =
+        new PolynomialRegression(
+            velocity.stream().mapToDouble(Double::doubleValue).toArray(),
+            voltage.stream().mapToDouble(Double::doubleValue).toArray(),
+            1);
+
+    double kV = regression.beta(1);
+    double kS = regression.beta(0);
 
     isFinished = true;
 
@@ -79,6 +90,6 @@ public class LinearTuningCommand extends Command {
   @Override
   public boolean isFinished() {
     // to avoid overusing memory
-    return regression.getN() > 30_000 || isFinished;
+    return voltage.size() > 30_000 || isFinished;
   }
 }
