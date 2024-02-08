@@ -10,6 +10,8 @@ public interface PVApriltagIO {
     public Pose2d poseEstimate;
     public double timestamp;
     public int[] targetsUsed;
+
+    public boolean isConnected;
   }
 
   public default void updateInputs(PVApriltagInputs inputs) {}

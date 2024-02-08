@@ -3,6 +3,7 @@ package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
@@ -32,7 +33,7 @@ public class PVApriltagCam {
     Logger.processInputs(name, inputs);
   }
 
-  private Matrix<N3, N1> getXYThetaStdDev(Pose3d pose, int[] tagIds) {
+  private Matrix<N3, N1> getXYThetaStdDev(Pose2d pose, int[] tagIds) {
     double totalDistance = 0.0;
     int nonErrorTags = 0;
 
@@ -44,7 +45,7 @@ public class PVApriltagCam {
       var tagOnField = fieldLayout.getTagPose(tagId);
 
       if (tagOnField.isPresent()) {
-        totalDistance += pose.getTranslation().getDistance(tagOnField.get().getTranslation());
+        totalDistance += pose.getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
         nonErrorTags++;
       }
     }
@@ -60,7 +61,7 @@ public class PVApriltagCam {
     return inputs.isConnected;
   }
 
-  public ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> getAllEstimates() {
+  public TimestampedPoseEstimator.TimestampedVisionUpdate getAllEstimates() {
     double timestamp = inputs.timestamp;
     Pose3d[] estimates = inputs.cameraPoseEstimates;
     int[] ids = inputs.cameraPoseEstimateIDs;
