@@ -19,6 +19,26 @@ public class PVApriltagIOReal implements PVApriltagIO {
   }
 
   @Override
+  public void setEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
+    poseEstimator.setPrimaryStrategy(strategy);
+  }
+
+  @Override
+  public void setLastPose(Pose2d pose) {
+    poseEstimator.setLastPose(pose);
+  }
+
+  @Override
+  public void setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
+    poseEstimator.setMultiTagFallbackStrategy(strategy);
+  }
+
+  @Override
+  public void setReferencePose(Pose2d pose) {
+    poseEstimator.setReferencePose(pose);
+  }
+
+  @Override
   public void updateInputs(PVApriltagInputs inputs) {
     var estimate = poseEstimator.update();
     if (estimate.isPresent()) {

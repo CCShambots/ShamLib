@@ -14,6 +14,7 @@ import frc.robot.ShamLib.util.GeomUtil;
 import java.util.ArrayList;
 import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
+import org.photonvision.PhotonPoseEstimator;
 
 public class PVApriltagCam {
   private final PVApriltagIO io;
@@ -22,10 +23,26 @@ public class PVApriltagCam {
   private final AprilTagFieldLayout fieldLayout;
 
   public PVApriltagCam(
-      String name, ShamLibConstants.BuildMode buildMode, AprilTagFieldLayout fieldLayout) {
-    io = getNewIO(buildMode, name);
+      String name, ShamLibConstants.BuildMode buildMode, Transform3d botToCam, AprilTagFieldLayout fieldLayout) {
+    io = getNewIO(buildMode, name, botToCam, fieldLayout);
     this.name = name;
     this.fieldLayout = fieldLayout;
+  }
+
+  public void setPoseEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
+    io.setEstimationStrategy(strategy);
+  }
+
+  public void setMultiTagFallbackEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
+    io.setMultiTagFallbackStrategy(strategy);
+  }
+
+  public void setReferencePose(Pose2d pose) {
+    io.setReferencePose(pose);
+  }
+
+  public void setLastPose(Pose2d pose) {
+    io.setLastPose(pose);
   }
 
   public void update() {
@@ -61,66 +78,18 @@ public class PVApriltagCam {
     return inputs.isConnected;
   }
 
-  public TimestampedPoseEstimator.TimestampedVisionUpdate getAllEstimates() {
-    double timestamp = inputs.timestamp;
-    Pose3d[] estimates = inputs.cameraPoseEstimates;
-    int[] ids = inputs.cameraPoseEstimateIDs;
-    ArrayList<TimestampedPoseEstimator.TimestampedVisionUpdate> out = new ArrayList<>();
-
-    if (!inputs.hasTarget) return out;
-
-    for (int i = 0; i < estimates.length; i++) {
-      Transform3d estimate = GeomUtil.pose3dToTransform3d(estimates[i]);
-      var tagPose = fieldLayout.getTagPose(ids[i]);
-
-      if (tagPose.isPresent()) {
-        Pose3d pose = tagPose.get().transformBy(estimate.inverse());
-
-        // exit if any estimates are >10cm outside the field
-        if (pose.getX() > fieldLayout.getFieldLength() + 0.1
-            || pose.getX() < -0.1
-            || pose.getY() > fieldLayout.getFieldWidth() + 0.1
-            || pose.getY() < -0.1) {
-          continue;
-        }
-
-        out.add(
-            new TimestampedPoseEstimator.TimestampedVisionUpdate(
-                timestamp, pose.toPose2d(), getXYThetaStdDev(pose, new int[] {ids[i]})));
-      }
-    }
-
-    return out;
+  public TimestampedPoseEstimator.TimestampedVisionUpdate getLatestEstimate() {
+    return new TimestampedPoseEstimator.TimestampedVisionUpdate(
+            inputs.timestamp,
+            inputs.poseEstimate,
+            getXYThetaStdDev(inputs.poseEstimate, inputs.targetsUsed)
+    );
   }
 
-  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getMultiTagEstimate() {
-    if (inputs.hasTarget) {
-      return Optional.of(
-          new TimestampedPoseEstimator.TimestampedVisionUpdate(
-              inputs.timestamp,
-              inputs.multiTagPoseEstimate.toPose2d(),
-              getXYThetaStdDev(inputs.multiTagPoseEstimate, inputs.cameraPoseEstimateIDs)));
-    }
-
-    return Optional.empty();
-  }
-
-  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getBestPoseEstimate() {
-    if (inputs.hasTarget) {
-      return Optional.of(
-          new TimestampedPoseEstimator.TimestampedVisionUpdate(
-              inputs.timestamp,
-              inputs.bestCameraPoseEstimate.toPose2d(),
-              getXYThetaStdDev(inputs.bestCameraPoseEstimate, new int[] {inputs.bestTagID})));
-    }
-
-    return Optional.empty();
-  }
-
-  private PVApriltagIO getNewIO(ShamLibConstants.BuildMode buildMode, String name) {
+  private PVApriltagIO getNewIO(ShamLibConstants.BuildMode buildMode, String name, Transform3d botToCam, AprilTagFieldLayout fieldLayout) {
     return switch (buildMode) {
       case REPLAY -> new PVApriltagIO() {};
-      default -> new PVApriltagIOReal(name);
+      default -> new PVApriltagIOReal(name, botToCam, fieldLayout);
     };
   }
 }
