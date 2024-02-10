@@ -70,20 +70,28 @@ public class SwerveModuleIOReal implements SwerveModuleIO {
     inputs.turnMotorAngle = turnMotor.getEncoderPosition();
     inputs.turnMotorVelocity = turnMotor.getEncoderVelocity();
     inputs.turnMotorTarget = turnMotor.getTarget();
+    inputs.turnMotorVoltage = turnMotor.getMotorVoltage().getValue();
 
     inputs.driveMotorPosition = driveMotor.getEncoderPosition();
     inputs.driveMotorVelocity = driveMotor.getEncoderVelocity();
+    inputs.driveMotorVoltage = driveMotor.getMotorVoltage().getValue();
+    inputs.driveMotorTarget = driveMotor.getTarget();
   }
 
   @Override
-  public Command calculateDriveKV(
-      double kS, Trigger increment, Trigger invert, BooleanSupplier interrupt, boolean telemetry) {
-    return driveMotor.calculateKV(kS, 0.05, increment, interrupt);
+  public void stop() {
+    driveMotor.stopMotor();
+    turnMotor.stopMotor();
   }
 
   @Override
-  public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
-    return turnMotor.calculateKV(kS, 0.05, increment, interrupt);
+  public void setDriveMotorVoltage(double voltage) {
+    driveMotor.setVoltage(voltage);
+  }
+
+  @Override
+  public void setTurnMotorVoltage(double voltage) {
+    turnMotor.setVoltage(voltage);
   }
 
   @Override
