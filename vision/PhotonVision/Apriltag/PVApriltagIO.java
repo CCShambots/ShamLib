@@ -7,11 +7,11 @@ import org.photonvision.PhotonPoseEstimator;
 public interface PVApriltagIO {
   @AutoLog
   public class PVApriltagInputs {
-    public Pose2d poseEstimate;
-    public double timestamp;
-    public int[] targetsUsed;
+    public Pose2d poseEstimate = new Pose2d();
+    public double timestamp = 0.0;
+    public int[] targetsUsed = new int[0];
 
-    public boolean isConnected;
+    public boolean isConnected = false;
   }
 
   public default void setEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {}
