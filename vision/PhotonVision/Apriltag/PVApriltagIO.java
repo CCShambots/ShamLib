@@ -1,24 +1,26 @@
 package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 
-import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Pose2d;
 import org.littletonrobotics.junction.AutoLog;
+import org.photonvision.PhotonPoseEstimator;
 
 public interface PVApriltagIO {
   @AutoLog
   public class PVApriltagInputs {
-    public Pose3d[] cameraPoseEstimates = new Pose3d[0];
-    public int[] cameraPoseEstimateIDs = new int[0];
-    public Pose3d bestCameraPoseEstimate = new Pose3d();
-    public int bestTagID = 0;
-
-    public Pose3d multiTagPoseEstimate = new Pose3d();
-
-    public boolean hasTarget = false;
-
+    public Pose2d poseEstimate = new Pose2d();
     public double timestamp = 0.0;
+    public int[] targetsUsed = new int[0];
 
     public boolean isConnected = false;
   }
+
+  public default void setEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {}
+
+  public default void setLastPose(Pose2d pose) {}
+
+  public default void setReferencePose(Pose2d pose) {}
+
+  public default void setMultiTagFallbackStrategy(PhotonPoseEstimator.PoseStrategy strategy) {}
 
   public default void updateInputs(PVApriltagInputs inputs) {}
 }
