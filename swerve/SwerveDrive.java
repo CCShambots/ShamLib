@@ -570,19 +570,20 @@ public class SwerveDrive {
 
   public Command getDriveVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
     Command[] tuningCommands = modules.stream()
-            .map((m) -> new SequentialCommandGroup(
-                    //move all modules to one angle
-                    new InstantCommand(() -> m.setDesiredState(new SwerveModuleState())),
-                    //run the tuning command
+            .map((m) ->
                     m.getDriveVoltageCalcCommand(
                             stop,
                             incrementUp,
                             incrementDown,
                             incrementAmount
-                    )
-            ))
+                    ))
             .toArray(Command[]::new);
 
-    return new ParallelCommandGroup(tuningCommands);
+    return new SequentialCommandGroup(
+            //set all modules to the same angle and 0 speed
+            new InstantCommand(() -> setAllModules(new SwerveModuleState())),
+            //run drive tuning on all modules in parallel
+            new ParallelCommandGroup(tuningCommands)
+    );
   }
 }
