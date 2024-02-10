@@ -4,15 +4,11 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
-import frc.robot.ShamLib.util.GeomUtil;
-import java.util.ArrayList;
-import java.util.Optional;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.PhotonPoseEstimator;
 
@@ -23,7 +19,10 @@ public class PVApriltagCam {
   private final AprilTagFieldLayout fieldLayout;
 
   public PVApriltagCam(
-      String name, ShamLibConstants.BuildMode buildMode, Transform3d botToCam, AprilTagFieldLayout fieldLayout) {
+      String name,
+      ShamLibConstants.BuildMode buildMode,
+      Transform3d botToCam,
+      AprilTagFieldLayout fieldLayout) {
     io = getNewIO(buildMode, name, botToCam, fieldLayout);
     this.name = name;
     this.fieldLayout = fieldLayout;
@@ -62,7 +61,8 @@ public class PVApriltagCam {
       var tagOnField = fieldLayout.getTagPose(tagId);
 
       if (tagOnField.isPresent()) {
-        totalDistance += pose.getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
+        totalDistance +=
+            pose.getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
         nonErrorTags++;
       }
     }
@@ -80,13 +80,16 @@ public class PVApriltagCam {
 
   public TimestampedPoseEstimator.TimestampedVisionUpdate getLatestEstimate() {
     return new TimestampedPoseEstimator.TimestampedVisionUpdate(
-            inputs.timestamp,
-            inputs.poseEstimate,
-            getXYThetaStdDev(inputs.poseEstimate, inputs.targetsUsed)
-    );
+        inputs.timestamp,
+        inputs.poseEstimate,
+        getXYThetaStdDev(inputs.poseEstimate, inputs.targetsUsed));
   }
 
-  private PVApriltagIO getNewIO(ShamLibConstants.BuildMode buildMode, String name, Transform3d botToCam, AprilTagFieldLayout fieldLayout) {
+  private PVApriltagIO getNewIO(
+      ShamLibConstants.BuildMode buildMode,
+      String name,
+      Transform3d botToCam,
+      AprilTagFieldLayout fieldLayout) {
     return switch (buildMode) {
       case REPLAY -> new PVApriltagIO() {};
       default -> new PVApriltagIOReal(name, botToCam, fieldLayout);

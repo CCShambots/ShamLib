@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface SwerveOdometry {
   public static record TimestampedVisionUpdate(
-          double timestamp, Pose2d pose, Matrix<N3, N1> stdDevs) {}
+      double timestamp, Pose2d pose, Matrix<N3, N1> stdDevs) {}
 
   public void resetPose(Pose2d newPose, SwerveModulePosition[] modulePositions);
 

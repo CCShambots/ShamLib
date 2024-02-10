@@ -2,12 +2,9 @@ package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
-import frc.robot.ShamLib.util.GeomUtil;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PVApriltagIOReal implements PVApriltagIO {
   private final PhotonCamera camera;
@@ -15,7 +12,9 @@ public class PVApriltagIOReal implements PVApriltagIO {
 
   public PVApriltagIOReal(String camName, Transform3d botToCamera, AprilTagFieldLayout layout) {
     camera = new PhotonCamera(camName);
-    poseEstimator = new PhotonPoseEstimator(layout, PhotonPoseEstimator.PoseStrategy.AVERAGE_BEST_TARGETS, camera, botToCamera);
+    poseEstimator =
+        new PhotonPoseEstimator(
+            layout, PhotonPoseEstimator.PoseStrategy.AVERAGE_BEST_TARGETS, camera, botToCamera);
   }
 
   @Override

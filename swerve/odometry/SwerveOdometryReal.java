@@ -6,7 +6,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
-
 import java.util.List;
 
 public class SwerveOdometryReal implements SwerveOdometry {
@@ -22,11 +21,12 @@ public class SwerveOdometryReal implements SwerveOdometry {
     odometry.addVisionMeasurement(getPose(), Timer.getFPGATimestamp());
   }
 
-
   @Override
-  public void addTimestampedVisionMeasurements(List<TimestampedPoseEstimator.TimestampedVisionUpdate> visionEstimates) {
+  public void addTimestampedVisionMeasurements(
+      List<TimestampedPoseEstimator.TimestampedVisionUpdate> visionEstimates) {
     for (var visionEstimate : visionEstimates) {
-      odometry.addVisionMeasurement(visionEstimate.pose(), visionEstimate.timestamp(), visionEstimate.stdDevs());
+      odometry.addVisionMeasurement(
+          visionEstimate.pose(), visionEstimate.timestamp(), visionEstimate.stdDevs());
     }
   }
 
