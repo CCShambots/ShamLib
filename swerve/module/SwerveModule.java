@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
 import java.util.function.BooleanSupplier;
+
+import frc.robot.ShamLib.motors.tuning.LinearTuningCommand;
 import org.littletonrobotics.junction.Logger;
 
 public class SwerveModule implements Sendable {
@@ -119,13 +121,28 @@ public class SwerveModule implements Sendable {
     return moduleName;
   }
 
-  public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
-    return io.calculateTurnKV(kS, increment, interrupt);
+  public Command getTurnVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    return new LinearTuningCommand(
+            stop,
+            incrementUp,
+            incrementDown,
+            io::setTurnMotorVoltage,
+            () -> inputs.turnMotorVelocity,
+            () -> inputs.turnMotorVoltage,
+            incrementAmount
+    );
   }
 
-  public Command calculateDriveKV(
-      double kS, Trigger increment, Trigger invert, BooleanSupplier interrupt, boolean telemetry) {
-    return io.calculateDriveKV(kS, increment, invert, interrupt, telemetry);
+  public Command getDriveVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    return new LinearTuningCommand(
+            stop,
+            incrementUp,
+            incrementDown,
+            io::setDriveMotorVoltage,
+            () -> inputs.driveMotorVelocity,
+            () -> inputs.driveMotorVoltage,
+            incrementAmount
+    );
   }
 
   public Rotation2d getAbsoluteAngle() {

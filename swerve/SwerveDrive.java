@@ -564,19 +564,26 @@ public class SwerveDrive {
     return AutoBuilder.pathfindToPose(target, constraints, 0);
   }
 
-  public Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
-    return modules.get(0).calculateTurnKV(kS, increment, interrupt);
+  public Command getTurnVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    return modules.get(0).getTurnVoltageCalcCommand(stop, incrementUp, incrementDown, incrementAmount);
   }
 
-  public Command calculateDriveKV(
-      double kS, Trigger increment, Trigger invert, BooleanSupplier interrupt) {
-    Command toRun = new InstantCommand();
-    boolean first = true;
-    for (SwerveModule module : modules) {
-      toRun = toRun.alongWith(module.calculateDriveKV(kS, increment, invert, interrupt, first));
-      if (first) first = false;
-    }
+  public Command getDriveVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    Command[] tuningCommands = modules.stream()
+            .map((m) ->
+                    m.getDriveVoltageCalcCommand(
+                            stop,
+                            incrementUp,
+                            incrementDown,
+                            incrementAmount
+                    ))
+            .toArray(Command[]::new);
 
-    return toRun;
+    return new SequentialCommandGroup(
+            //set all modules to the same angle and 0 speed
+            new InstantCommand(() -> setAllModules(new SwerveModuleState())),
+            //run drive tuning on all modules in parallel
+            new ParallelCommandGroup(tuningCommands)
+    );
   }
 }

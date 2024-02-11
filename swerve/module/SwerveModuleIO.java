@@ -17,24 +17,23 @@ public interface SwerveModuleIO {
     public double turnMotorAngle = 0.0; // degrees
     public double turnMotorVelocity = 0.0; // degrees per second
     public double turnMotorTarget = 0.0; // degrees
+    public double turnMotorVoltage = 0.0;
 
     public double driveMotorPosition = 0.0; // meters
     public double driveMotorVelocity = 0.0; // meters per second
     public double driveMotorTarget = 0.0; // meters per second
+    public double driveMotorVoltage = 0.0;
   }
 
   public default void updateInputs(SwerveModuleInputs inputs) {}
 
   public default void applyCurrentLimit(TalonFX motor, CurrentLimitsConfigs limit) {}
 
-  public default Command calculateTurnKV(double kS, Trigger increment, BooleanSupplier interrupt) {
-    return new InstantCommand();
-  }
+  public default void stop() {}
 
-  public default Command calculateDriveKV(
-      double kS, Trigger increment, Trigger invert, BooleanSupplier interrupt, boolean telemetry) {
-    return new InstantCommand();
-  }
+  public default void setTurnMotorVoltage(double voltage) {}
+
+  public default void setDriveMotorVoltage(double voltage) {}
 
   public default void resetTurnMotorPosition(double pos) {}
 

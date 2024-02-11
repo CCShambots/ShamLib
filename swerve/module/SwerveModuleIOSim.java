@@ -32,9 +32,11 @@ public class SwerveModuleIOSim extends SwerveModuleIOReal {
     inputs.turnMotorAngle = turnMotor.getEncoderPosition();
     inputs.turnMotorVelocity = turnMotor.getEncoderVelocity();
     inputs.turnMotorTarget = turnMotor.getTarget();
+    inputs.turnMotorVoltage = turnMotor.getMotorVoltage().getValue();
 
     inputs.driveMotorPosition = driveMotor.getEncoderPosition();
     inputs.driveMotorVelocity = driveMotor.getEncoderVelocity();
     inputs.driveMotorTarget = driveMotor.getTarget();
+    inputs.driveMotorVoltage = driveMotor.getMotorVoltage().getValue();
   }
 }
