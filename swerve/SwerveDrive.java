@@ -564,26 +564,26 @@ public class SwerveDrive {
     return AutoBuilder.pathfindToPose(target, constraints, 0);
   }
 
-  public Command getTurnVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
-    return modules.get(0).getTurnVoltageCalcCommand(stop, incrementUp, incrementDown, incrementAmount);
+  public Command getTurnVoltageCalcCommand(
+      Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    return modules
+        .get(0)
+        .getTurnVoltageCalcCommand(stop, incrementUp, incrementDown, incrementAmount);
   }
 
-  public Command getDriveVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
-    Command[] tuningCommands = modules.stream()
-            .map((m) ->
-                    m.getDriveVoltageCalcCommand(
-                            stop,
-                            incrementUp,
-                            incrementDown,
-                            incrementAmount
-                    ))
+  public Command getDriveVoltageCalcCommand(
+      Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+    Command[] tuningCommands =
+        modules.stream()
+            .map(
+                (m) ->
+                    m.getDriveVoltageCalcCommand(stop, incrementUp, incrementDown, incrementAmount))
             .toArray(Command[]::new);
 
     return new SequentialCommandGroup(
-            //set all modules to the same angle and 0 speed
-            new InstantCommand(() -> setAllModules(new SwerveModuleState())),
-            //run drive tuning on all modules in parallel
-            new ParallelCommandGroup(tuningCommands)
-    );
+        // set all modules to the same angle and 0 speed
+        new InstantCommand(() -> setAllModules(new SwerveModuleState())),
+        // run drive tuning on all modules in parallel
+        new ParallelCommandGroup(tuningCommands));
   }
 }

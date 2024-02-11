@@ -10,8 +10,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.motors.talonfx.PIDSVGains;
-import java.util.function.BooleanSupplier;
-
 import frc.robot.ShamLib.motors.tuning.LinearTuningCommand;
 import org.littletonrobotics.junction.Logger;
 
@@ -121,28 +119,28 @@ public class SwerveModule implements Sendable {
     return moduleName;
   }
 
-  public Command getTurnVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+  public Command getTurnVoltageCalcCommand(
+      Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
     return new LinearTuningCommand(
-            stop,
-            incrementUp,
-            incrementDown,
-            io::setTurnMotorVoltage,
-            () -> inputs.turnMotorVelocity,
-            () -> inputs.turnMotorVoltage,
-            incrementAmount
-    );
+        stop,
+        incrementUp,
+        incrementDown,
+        io::setTurnMotorVoltage,
+        () -> inputs.turnMotorVelocity,
+        () -> inputs.turnMotorVoltage,
+        incrementAmount);
   }
 
-  public Command getDriveVoltageCalcCommand(Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
+  public Command getDriveVoltageCalcCommand(
+      Trigger stop, Trigger incrementUp, Trigger incrementDown, double incrementAmount) {
     return new LinearTuningCommand(
-            stop,
-            incrementUp,
-            incrementDown,
-            io::setDriveMotorVoltage,
-            () -> inputs.driveMotorVelocity,
-            () -> inputs.driveMotorVoltage,
-            incrementAmount
-    );
+        stop,
+        incrementUp,
+        incrementDown,
+        io::setDriveMotorVoltage,
+        () -> inputs.driveMotorVelocity,
+        () -> inputs.driveMotorVoltage,
+        incrementAmount);
   }
 
   public Rotation2d getAbsoluteAngle() {
