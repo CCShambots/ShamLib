@@ -309,7 +309,6 @@ public class SwerveDrive {
 
     PathPlannerLogging.setLogTargetPoseCallback(
         (targetPose) -> {
-          System.out.println(targetPose);
           Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
   }
@@ -324,6 +323,7 @@ public class SwerveDrive {
     }
 
     updateOdometry();
+
   }
 
   public Rotation2d getPitch() {
@@ -370,7 +370,7 @@ public class SwerveDrive {
     return angles;
   }
 
-  @AutoLogOutput(key = "SwerveDrive/Module States")
+  @AutoLogOutput(key="SwerveDrive/Module States")
   public SwerveModuleState[] getModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[numModules];
 
@@ -381,7 +381,7 @@ public class SwerveDrive {
     return states;
   }
 
-  @AutoLogOutput(key = "SwerveDrive/Module Targets")
+  @AutoLogOutput(key="SwerveDrive/Module Targets")
   public SwerveModuleState[] getTargetModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[numModules];
 
