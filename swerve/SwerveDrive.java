@@ -370,6 +370,7 @@ public class SwerveDrive {
     return angles;
   }
 
+  @AutoLogOutput(key = "SwerveDrive/Module States")
   public SwerveModuleState[] getModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[numModules];
 
@@ -380,6 +381,7 @@ public class SwerveDrive {
     return states;
   }
 
+  @AutoLogOutput(key = "SwerveDrive/Module Targets")
   public SwerveModuleState[] getTargetModuleStates() {
     SwerveModuleState[] states = new SwerveModuleState[numModules];
 
