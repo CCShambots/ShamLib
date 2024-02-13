@@ -3,7 +3,6 @@ package frc.robot.ShamLib;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +11,7 @@ public class AllianceManager {
   private static DriverStation.Alliance alliance = DriverStation.Alliance.Red;
   private static boolean overrideAlliance = false;
 
-  //List of runnables to execute whenever the alliance changes
+  // List of runnables to execute whenever the alliance changes
   private static List<Runnable> allianceChangeHooks = new ArrayList<>();
 
   public static void applyAlliance(Optional<DriverStation.Alliance> newAlliance) {
@@ -40,7 +39,10 @@ public class AllianceManager {
   private static void setAlliance(Alliance newAlliance) {
     alliance = newAlliance;
 
-    allianceChangeHooks.forEach((e) -> {e.run();});
+    allianceChangeHooks.forEach(
+        (e) -> {
+          e.run();
+        });
   }
 
   public static Alliance getAlliance() {
