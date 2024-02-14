@@ -12,11 +12,13 @@ public interface SwerveModuleIO {
 
     public double turnMotorAngle = 0.0; // degrees
     public double turnMotorVelocity = 0.0; // degrees per second
+    public double turnMotorRotorVelocity = 0.0;
     public double turnMotorTarget = 0.0; // degrees
     public double turnMotorVoltage = 0.0;
 
     public double driveMotorPosition = 0.0; // meters
     public double driveMotorVelocity = 0.0; // meters per second
+    public double driveMotorRotorVelocity = 0.0;
     public double driveMotorTarget = 0.0; // meters per second
     public double driveMotorVoltage = 0.0;
   }
