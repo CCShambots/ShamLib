@@ -73,6 +73,9 @@ public class SwerveModuleIOReal implements SwerveModuleIO {
     inputs.driveMotorVelocity = driveMotor.getEncoderVelocity();
     inputs.driveMotorVoltage = driveMotor.getMotorVoltage().getValue();
     inputs.driveMotorTarget = driveMotor.getTarget();
+
+    inputs.driveMotorRotorVelocity = driveMotor.getRotorVelocity().getValueAsDouble();
+    inputs.turnMotorRotorVelocity = turnMotor.getRotorVelocity().getValueAsDouble();
   }
 
   @Override
