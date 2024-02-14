@@ -126,7 +126,7 @@ public class SwerveModule implements Sendable {
         incrementUp,
         incrementDown,
         io::setTurnMotorVoltage,
-        () -> inputs.turnMotorVelocity,
+        () -> inputs.turnMotorRotorVelocity,
         () -> inputs.turnMotorVoltage,
         incrementAmount);
   }
@@ -138,7 +138,7 @@ public class SwerveModule implements Sendable {
         incrementUp,
         incrementDown,
         io::setDriveMotorVoltage,
-        () -> inputs.driveMotorVelocity,
+        () -> inputs.driveMotorRotorVelocity,
         () -> inputs.driveMotorVoltage,
         incrementAmount);
   }
