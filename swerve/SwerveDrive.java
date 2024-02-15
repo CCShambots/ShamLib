@@ -72,6 +72,8 @@ public class SwerveDrive {
   private final PIDGains rotationGains;
   private final double driveBaseRadius; // In meters
 
+  private final double loopPeriod;
+
   /**
    * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
    *
@@ -107,6 +109,7 @@ public class SwerveDrive {
       CurrentLimitsConfigs currentLimit,
       Subsystem subsystem,
       BooleanSupplier flipTrajectory,
+      double loopPeriod,
       ModuleInfo... moduleInfos) {
     this(
         mode,
@@ -129,6 +132,7 @@ public class SwerveDrive {
         false,
         flipTrajectory,
         null,
+        loopPeriod,
         moduleInfos);
   }
 
@@ -169,6 +173,7 @@ public class SwerveDrive {
       boolean useTimestamped,
       BooleanSupplier flipTrajectory,
       Matrix<N3, N1> stdDevs,
+      double loopPeriod,
       ModuleInfo... moduleInfos) {
 
     this.buildMode = mode;
@@ -181,6 +186,8 @@ public class SwerveDrive {
 
     this.translationGains = translationGains;
     this.rotationGains = autoThetaGains;
+
+    this.loopPeriod = loopPeriod;
 
     modules = new ArrayList<>();
     Translation2d[] offsets = new Translation2d[moduleInfos.length];
@@ -426,7 +433,9 @@ public class SwerveDrive {
       speeds.vyMetersPerSecond = speeds.vyMetersPerSecond * factor;
     }
 
-    SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(speeds);
+    ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, loopPeriod);
+
+    SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(discreteSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, maxChassisSpeed);
 
     setModuleStates(swerveModuleStates);
