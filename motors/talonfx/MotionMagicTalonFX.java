@@ -5,7 +5,7 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 
 public class MotionMagicTalonFX extends EnhancedTalonFX {
-  private double target; // In output units
+  protected double target; // In output units
 
   private MotionMagicVoltage mmReq = new MotionMagicVoltage(0);
 
