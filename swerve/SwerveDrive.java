@@ -467,6 +467,7 @@ public class SwerveDrive {
    *
    * @return Robot angle
    */
+  @AutoLogOutput(key = "SwerveDrive/Current Angle")
   public Rotation2d getCurrentAngle() {
     if (buildMode == BuildMode.SIM) {
       return getPose().getRotation();
