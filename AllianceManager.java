@@ -16,7 +16,7 @@ public class AllianceManager {
 
   public static void applyAlliance(Optional<DriverStation.Alliance> newAlliance) {
     if (!overrideAlliance && newAlliance.isPresent()) {
-      alliance = newAlliance.get();
+      setAlliance(newAlliance.get());
     }
   }
 
