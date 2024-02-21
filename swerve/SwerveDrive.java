@@ -1,5 +1,6 @@
 package frc.robot.ShamLib.swerve;
 
+import com.ctre.phoenix.platform.can.AutocacheState;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
@@ -73,6 +74,10 @@ public class SwerveDrive {
   private final double driveBaseRadius; // In meters
 
   private final double loopPeriod;
+
+  private final BooleanSupplier flipTrajectory;
+  private final PIDGains autoThetaGains;
+  private final Subsystem subsystem;
 
   /**
    * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
@@ -288,23 +293,9 @@ public class SwerveDrive {
             moduleInfos[0].offset.getX(),
             moduleInfos[0].offset.getY()); // Radius of the drive base in meters
 
-    // Configure the auto builder stuff
-    if (!AutoBuilder.isConfigured()) {
-      AutoBuilder.configureHolonomic(
-          this::getPose,
-          this::resetOdometryPose,
-          this::getChassisSpeeds,
-          this::drive,
-          new HolonomicPathFollowerConfig(
-              translationGains.toPIDConstants(),
-              autoThetaGains.toPIDConstants(),
-              maxChassisSpeed,
-              driveBaseRadius,
-              new ReplanningConfig()),
-          // TODO: actually use this
-          flipTrajectory,
-          subsystem);
-    }
+    this.flipTrajectory = flipTrajectory;
+    this.subsystem = subsystem;
+    this.autoThetaGains = autoThetaGains;
 
     Pathfinding.setPathfinder(new LocalADStarAK());
 
@@ -318,6 +309,25 @@ public class SwerveDrive {
         (targetPose) -> {
           Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
         });
+  }
+
+  public void configurePathplanner() {
+    // Configure the auto builder stuff
+    if (!AutoBuilder.isConfigured()) {
+      AutoBuilder.configureHolonomic(
+          this::getPose,
+          this::resetOdometryPose,
+          this::getChassisSpeeds,
+          this::drive,
+          new HolonomicPathFollowerConfig(
+              translationGains.toPIDConstants(),
+              autoThetaGains.toPIDConstants(),
+              maxChassisSpeed,
+              driveBaseRadius,
+              new ReplanningConfig()),
+          flipTrajectory,
+          subsystem);
+    }
   }
 
   /*MUST BE CALLED PERIODICALLY */
