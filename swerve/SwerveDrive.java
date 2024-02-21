@@ -1,6 +1,5 @@
 package frc.robot.ShamLib.swerve;
 
-import com.ctre.phoenix.platform.can.AutocacheState;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
