@@ -295,19 +295,6 @@ public class SwerveDrive {
     this.flipTrajectory = flipTrajectory;
     this.subsystem = subsystem;
     this.autoThetaGains = autoThetaGains;
-
-    Pathfinding.setPathfinder(new LocalADStarAK());
-
-    PathPlannerLogging.setLogActivePathCallback(
-        (activePath) -> {
-          Logger.recordOutput(
-              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
-        });
-
-    PathPlannerLogging.setLogTargetPoseCallback(
-        (targetPose) -> {
-          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
-        });
   }
 
   public void configurePathplanner() {
@@ -327,6 +314,19 @@ public class SwerveDrive {
           flipTrajectory,
           subsystem);
     }
+
+    Pathfinding.setPathfinder(new LocalADStarAK());
+
+    PathPlannerLogging.setLogActivePathCallback(
+        (activePath) -> {
+          Logger.recordOutput(
+              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
+        });
+
+    PathPlannerLogging.setLogTargetPoseCallback(
+        (targetPose) -> {
+          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+        });
   }
 
   /*MUST BE CALLED PERIODICALLY */
