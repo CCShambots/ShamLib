@@ -4,6 +4,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
@@ -47,6 +48,18 @@ public class PVApriltagCam {
   public void update() {
     io.updateInputs(inputs);
     Logger.processInputs(name, inputs);
+
+    Logger.recordOutput("Vision/" + name + "tagsUsed", getTagPoseList());
+  }
+
+  public Pose3d[] getTagPoseList() {
+    Pose3d[] poses = new Pose3d[inputs.targetsUsed.length];
+
+    for (int i = 0; i < inputs.targetsUsed.length; i++) {
+      poses[i] = fieldLayout.getTagPose(i).orElseGet(() -> new Pose3d());
+    }
+
+    return poses;
   }
 
   private Matrix<N3, N1> getXYThetaStdDev(Pose2d pose, int[] tagIds) {
