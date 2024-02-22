@@ -20,7 +20,7 @@ public class CANdleEX extends CANdle {
     this.ledCount = ledCount;
 
     CANdleConfiguration configAll = new CANdleConfiguration();
-    configAll.statusLedOffWhenActive = true;
+    configAll.statusLedOffWhenActive = false;
     configAll.disableWhenLOS = false;
     configAll.stripType = LEDStripType.GRB;
     configAll.brightnessScalar = brightness;
