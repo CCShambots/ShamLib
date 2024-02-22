@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
 import org.littletonrobotics.junction.Logger;
@@ -18,15 +19,18 @@ public class PVApriltagCam {
   private final PVApriltagInputsAutoLogged inputs = new PVApriltagInputsAutoLogged();
   private final String name;
   private final AprilTagFieldLayout fieldLayout;
+  private final double trustCutOff;
 
   public PVApriltagCam(
       String name,
       ShamLibConstants.BuildMode buildMode,
       Transform3d botToCam,
-      AprilTagFieldLayout fieldLayout) {
+      AprilTagFieldLayout fieldLayout,
+      double trustCutOff) {
     io = getNewIO(buildMode, name, botToCam, fieldLayout);
     this.name = name;
     this.fieldLayout = fieldLayout;
+    this.trustCutOff = trustCutOff;
   }
 
   public void setPoseEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
@@ -83,6 +87,10 @@ public class PVApriltagCam {
 
     double xyStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
     double thetaStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
+
+    if (avgDistance >= trustCutOff) {
+      return VecBuilder.fill(10000, 10000, 10000);
+    }
 
     return VecBuilder.fill(xyStdDev, xyStdDev, thetaStdDev);
   }
