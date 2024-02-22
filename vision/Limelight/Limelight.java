@@ -50,6 +50,10 @@ public class Limelight {
     io.setLLRobot(values);
   }
 
+  public double getLatency() {
+    return inputs.tl;
+  }
+
   private LimelightIO getNewIO(ShamLibConstants.BuildMode buildMode, String name) {
     if (buildMode == ShamLibConstants.BuildMode.REAL) {
       return new LimelightIOReal(name);
