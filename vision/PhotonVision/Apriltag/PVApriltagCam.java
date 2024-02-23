@@ -2,6 +2,7 @@ package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -11,7 +12,13 @@ import edu.wpi.first.math.numbers.N3;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
 import org.littletonrobotics.junction.Logger;
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.targeting.PhotonPipelineResult;
+
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 public class PVApriltagCam {
   private final PVApriltagIO io;
@@ -19,6 +26,11 @@ public class PVApriltagCam {
   private final String name;
   private final AprilTagFieldLayout fieldLayout;
   private final double trustCutOff;
+  private final PhotonPoseEstimator photonPoseEstimator;
+
+  private UnaryOperator<PhotonPipelineResult> preprocess = null;
+  private Function<EstimatedRobotPose, TimestampedPoseEstimator.TimestampedVisionUpdate> postProcess = this::defaultPostProcess;
+
 
   public PVApriltagCam(
       String name,
@@ -26,46 +38,45 @@ public class PVApriltagCam {
       Transform3d botToCam,
       AprilTagFieldLayout fieldLayout,
       double trustCutOff) {
-    io = getNewIO(buildMode, name, botToCam, fieldLayout);
+    io = getNewIO(buildMode, name);
+
+    photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY, botToCam);
+
     this.name = name;
     this.fieldLayout = fieldLayout;
     this.trustCutOff = trustCutOff;
   }
 
+  private TimestampedPoseEstimator.TimestampedVisionUpdate defaultPostProcess(EstimatedRobotPose estimate) {
+    return new TimestampedPoseEstimator.TimestampedVisionUpdate(
+            estimate.timestampSeconds,
+            estimate.estimatedPose.toPose2d(),
+            getXYThetaStdDev(estimate)
+    );
+  }
+
   public void setPoseEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
-    io.setEstimationStrategy(strategy);
+    photonPoseEstimator.setPrimaryStrategy(strategy);
   }
 
   public void setMultiTagFallbackEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
-    io.setMultiTagFallbackStrategy(strategy);
+    photonPoseEstimator.setMultiTagFallbackStrategy(strategy);
   }
 
   public void setReferencePose(Pose2d pose) {
-    io.setReferencePose(pose);
+    photonPoseEstimator.setReferencePose(pose);
   }
 
   public void setLastPose(Pose2d pose) {
-    io.setLastPose(pose);
+    photonPoseEstimator.setLastPose(pose);
   }
 
   public void update() {
     io.updateInputs(inputs);
     Logger.processInputs(name, inputs);
-
-    Logger.recordOutput("Vision/" + name + "tagsUsed", getTagPoseList());
   }
 
-  public Pose3d[] getTagPoseList() {
-    Pose3d[] poses = new Pose3d[inputs.targetsUsed.length];
-
-    for (int i = 0; i < inputs.targetsUsed.length; i++) {
-      poses[i] = fieldLayout.getTagPose(i).orElseGet(() -> new Pose3d());
-    }
-
-    return poses;
-  }
-
-  private Matrix<N3, N1> getXYThetaStdDev(Pose2d pose, int[] tagIds) {
+  private Matrix<N3, N1> getXYThetaStdDev(EstimatedRobotPose pose) {
     double totalDistance = 0.0;
     int nonErrorTags = 0;
 
@@ -73,12 +84,12 @@ public class PVApriltagCam {
     // tags less)
     // algorithm from frc6328
 
-    for (int tagId : tagIds) {
-      var tagOnField = fieldLayout.getTagPose(tagId);
+    for (var tag : pose.targetsUsed) {
+      var tagOnField = fieldLayout.getTagPose(tag.getFiducialId());
 
       if (tagOnField.isPresent()) {
         totalDistance +=
-            pose.getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
+            pose.estimatedPose.toPose2d().getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
         nonErrorTags++;
       }
     }
@@ -98,21 +109,24 @@ public class PVApriltagCam {
     return inputs.isConnected;
   }
 
-  public TimestampedPoseEstimator.TimestampedVisionUpdate getLatestEstimate() {
-    return new TimestampedPoseEstimator.TimestampedVisionUpdate(
-        inputs.timestamp,
-        inputs.poseEstimate,
-        getXYThetaStdDev(inputs.poseEstimate, inputs.targetsUsed));
+  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getEstimate() {
+    var raw = inputs.frame;
+
+    if (preprocess != null) {
+      raw = preprocess.apply(raw);
+    }
+
+    var estimate = photonPoseEstimator.update(raw, inputs.cameraMatrix, inputs.distanceCoeffs);
+
+    return estimate.map(postProcess);
   }
 
   private PVApriltagIO getNewIO(
       ShamLibConstants.BuildMode buildMode,
-      String name,
-      Transform3d botToCam,
-      AprilTagFieldLayout fieldLayout) {
+      String name) {
     return switch (buildMode) {
       case REPLAY -> new PVApriltagIO() {};
-      default -> new PVApriltagIOReal(name, botToCam, fieldLayout);
+      default -> new PVApriltagIOReal(name);
     };
   }
 }
