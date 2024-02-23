@@ -59,6 +59,7 @@ public class SwerveDrive {
   protected final double maxChassisRotationAccel;
   private int numModules = 0;
   @AutoLogOutput private Rotation2d rotationOffset = new Rotation2d();
+  @AutoLogOutput private Rotation2d fieldOrientedRotationOffset = new Rotation2d();
   private Rotation2d holdAngle;
 
   private boolean fieldRelative = true;
@@ -484,6 +485,10 @@ public class SwerveDrive {
     return getGyroHeading().minus(rotationOffset);
   }
 
+  public Rotation2d getCurrentFieldOrientedAngle() {
+    return getCurrentAngle().minus(fieldOrientedRotationOffset);
+  }
+
   public void stopModules() {
     modules.forEach(SwerveModule::stop);
   }
@@ -544,12 +549,13 @@ public class SwerveDrive {
   // TODO: Make this play nice with the odometry. Need to test if this is even an issue
   public void resetGyro(Rotation2d angle) {
     gyroIO.setGyroYaw(angle);
-    rotationOffset = new Rotation2d();
+    // rotationOffset = new Rotation2d();
+    fieldOrientedRotationOffset = new Rotation2d();
     holdAngle = angle;
   }
 
-  public void resetRotationOffset(Rotation2d angle) {
-    rotationOffset = angle;
+  public void resetFieldOrientedRotationOffset(Rotation2d angle) {
+    fieldOrientedRotationOffset = angle;
   }
 
   public void resetGyro() {
