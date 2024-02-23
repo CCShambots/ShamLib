@@ -3,20 +3,14 @@ package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 import edu.wpi.first.math.MatBuilder;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
-import org.ejml.simple.SimpleMatrix;
-import org.littletonrobotics.junction.AutoLog;
+import java.util.Optional;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
-import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.common.dataflow.structures.Packet;
 import org.photonvision.targeting.PhotonPipelineResult;
-
-import java.util.Optional;
 
 public interface PVApriltagIO {
   public class PVApriltagInputs implements LoggableInputs {
@@ -47,15 +41,13 @@ public interface PVApriltagIO {
 
       if (cameraMatrix.length > 0) {
         this.cameraMatrix = Optional.of(MatBuilder.fill(Nat.N3(), Nat.N3(), cameraMatrix));
-      }
-      else {
+      } else {
         this.cameraMatrix = Optional.empty();
       }
 
       if (distanceCoeffs.length > 0) {
         this.distanceCoeffs = Optional.of(MatBuilder.fill(Nat.N5(), Nat.N1(), distanceCoeffs));
-      }
-      else {
+      } else {
         this.distanceCoeffs = Optional.empty();
       }
     }

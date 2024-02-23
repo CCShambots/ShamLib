@@ -2,35 +2,32 @@ package frc.robot.ShamLib.vision.PhotonVision.Apriltag;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import frc.robot.ShamLib.ShamLibConstants;
 import frc.robot.ShamLib.swerve.TimestampedPoseEstimator;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.targeting.PhotonPipelineResult;
 
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-
 public class PVApriltagCam {
   private final PVApriltagIO io;
-  private final PVApriltagInputsAutoLogged inputs = new PVApriltagInputsAutoLogged();
+  private final PVApriltagIO.PVApriltagInputs inputs = new PVApriltagIO.PVApriltagInputs();
   private final String name;
   private final AprilTagFieldLayout fieldLayout;
   private final double trustCutOff;
   private final PhotonPoseEstimator photonPoseEstimator;
 
   private UnaryOperator<PhotonPipelineResult> preprocess = null;
-  private Function<EstimatedRobotPose, TimestampedPoseEstimator.TimestampedVisionUpdate> postProcess = this::defaultPostProcess;
-
+  private Function<EstimatedRobotPose, TimestampedPoseEstimator.TimestampedVisionUpdate>
+      postprocess = this::defaultPostProcess;
 
   public PVApriltagCam(
       String name,
@@ -40,19 +37,28 @@ public class PVApriltagCam {
       double trustCutOff) {
     io = getNewIO(buildMode, name);
 
-    photonPoseEstimator = new PhotonPoseEstimator(fieldLayout, PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY, botToCam);
+    photonPoseEstimator =
+        new PhotonPoseEstimator(
+            fieldLayout, PhotonPoseEstimator.PoseStrategy.LOWEST_AMBIGUITY, botToCam);
 
     this.name = name;
     this.fieldLayout = fieldLayout;
     this.trustCutOff = trustCutOff;
   }
 
-  private TimestampedPoseEstimator.TimestampedVisionUpdate defaultPostProcess(EstimatedRobotPose estimate) {
+  public TimestampedPoseEstimator.TimestampedVisionUpdate defaultPostProcess(
+      EstimatedRobotPose estimate) {
     return new TimestampedPoseEstimator.TimestampedVisionUpdate(
-            estimate.timestampSeconds,
-            estimate.estimatedPose.toPose2d(),
-            getXYThetaStdDev(estimate)
-    );
+        estimate.timestampSeconds, estimate.estimatedPose.toPose2d(), getXYThetaStdDev(estimate));
+  }
+
+  public void setPreProcess(UnaryOperator<PhotonPipelineResult> preprocess) {
+    this.preprocess = preprocess;
+  }
+
+  public void setPostProcess(
+      Function<EstimatedRobotPose, TimestampedPoseEstimator.TimestampedVisionUpdate> postprocess) {
+    this.postprocess = postprocess;
   }
 
   public void setPoseEstimationStrategy(PhotonPoseEstimator.PoseStrategy strategy) {
@@ -74,9 +80,13 @@ public class PVApriltagCam {
   public void update() {
     io.updateInputs(inputs);
     Logger.processInputs(name, inputs);
+
+    var estimate = getLatestEstimate();
+
+    estimate.ifPresent((e) -> Logger.recordOutput(name + "/latestEstimate", e.pose()));
   }
 
-  private Matrix<N3, N1> getXYThetaStdDev(EstimatedRobotPose pose) {
+  public Matrix<N3, N1> getXYThetaStdDev(EstimatedRobotPose pose) {
     double totalDistance = 0.0;
     int nonErrorTags = 0;
 
@@ -89,7 +99,10 @@ public class PVApriltagCam {
 
       if (tagOnField.isPresent()) {
         totalDistance +=
-            pose.estimatedPose.toPose2d().getTranslation().getDistance(tagOnField.get().toPose2d().getTranslation());
+            pose.estimatedPose
+                .toPose2d()
+                .getTranslation()
+                .getDistance(tagOnField.get().toPose2d().getTranslation());
         nonErrorTags++;
       }
     }
@@ -109,7 +122,7 @@ public class PVApriltagCam {
     return inputs.isConnected;
   }
 
-  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getEstimate() {
+  public Optional<TimestampedPoseEstimator.TimestampedVisionUpdate> getLatestEstimate() {
     var raw = inputs.frame;
 
     if (preprocess != null) {
@@ -118,12 +131,10 @@ public class PVApriltagCam {
 
     var estimate = photonPoseEstimator.update(raw, inputs.cameraMatrix, inputs.distanceCoeffs);
 
-    return estimate.map(postProcess);
+    return estimate.map(postprocess);
   }
 
-  private PVApriltagIO getNewIO(
-      ShamLibConstants.BuildMode buildMode,
-      String name) {
+  private PVApriltagIO getNewIO(ShamLibConstants.BuildMode buildMode, String name) {
     return switch (buildMode) {
       case REPLAY -> new PVApriltagIO() {};
       default -> new PVApriltagIOReal(name);
