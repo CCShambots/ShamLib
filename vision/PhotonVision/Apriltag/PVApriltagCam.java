@@ -73,6 +73,10 @@ public class PVApriltagCam {
     photonPoseEstimator.setReferencePose(pose);
   }
 
+  public String getName() {
+    return name;
+  }
+
   public void setLastPose(Pose2d pose) {
     photonPoseEstimator.setLastPose(pose);
   }
@@ -80,10 +84,6 @@ public class PVApriltagCam {
   public void update() {
     io.updateInputs(inputs);
     Logger.processInputs(name, inputs);
-
-    var estimate = getLatestEstimate();
-
-    estimate.ifPresent((e) -> Logger.recordOutput(name + "/latestEstimate", e.pose()));
   }
 
   public Matrix<N3, N1> getXYThetaStdDev(EstimatedRobotPose pose) {
