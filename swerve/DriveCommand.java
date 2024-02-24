@@ -83,7 +83,7 @@ public class DriveCommand extends Command {
     if (drivetrain.isFieldRelative()) {
       speeds =
           ChassisSpeeds.fromFieldRelativeSpeeds(
-              correctedX, correctedY, correctedRot, drivetrain.getCurrentAngle());
+              correctedX, correctedY, correctedRot, drivetrain.getCurrentFieldOrientedAngle());
     } else {
       speeds = new ChassisSpeeds(correctedX, correctedY, correctedRot);
     }
