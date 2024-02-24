@@ -84,8 +84,8 @@ public class PVApriltagCam {
     }
     double avgDistance = totalDistance / nonErrorTags;
 
-    double xyStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
-    double thetaStdDev = Math.pow(avgDistance, 2.0) / nonErrorTags;
+    double xyStdDev = Math.pow(avgDistance, 2) / nonErrorTags;
+    double thetaStdDev = Math.pow(avgDistance, 2) / nonErrorTags;
 
     if (avgDistance >= trustCutOff) {
       return VecBuilder.fill(10000, 10000, 10000);
