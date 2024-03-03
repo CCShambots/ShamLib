@@ -485,6 +485,7 @@ public class SwerveDrive {
     return getGyroHeading().minus(rotationOffset);
   }
 
+  @AutoLogOutput(key = "SwerveDrive/Field Oriented Angle")
   public Rotation2d getCurrentFieldOrientedAngle() {
     return getCurrentAngle().minus(fieldOrientedRotationOffset);
   }
