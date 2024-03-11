@@ -435,6 +435,10 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     currentFlags.remove(flag);
   }
 
+  public final Command clearFlagCommand(E flag) {
+    return new InstantCommand(() -> clearFlag(flag));
+  }
+
   /** Clear all states that are currently flags */
   public final void clearFlags() {
     currentFlags.clear();
