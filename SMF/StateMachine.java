@@ -121,6 +121,9 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
   /** User-implemented method ran immediately when the autonomous period is started */
   protected void onAutonomousStart() {}
 
+  /** User-implemented method ran immediately when the test period is started */
+  protected void onTestStart() {}
+
   /**
    * Stop the state machine from running. No transitions or state commands will run while the
    * machine is disabled

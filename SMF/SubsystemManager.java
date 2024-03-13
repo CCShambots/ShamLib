@@ -66,6 +66,10 @@ public class SubsystemManager {
   /** Call in testInit(), will notify all subsystems that the teleoperated period has started */
   public void notifyTestStart() {
     prepSubsystems();
+
+    for (StateMachine<?> sm : subsystems) {
+      sm.onTestStart();
+    }
   }
 
   /** Call in autonomousInit(), will notify all subsystems that the autonomous period has started */
