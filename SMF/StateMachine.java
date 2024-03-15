@@ -192,6 +192,12 @@ public abstract class StateMachine<E extends Enum<E>> extends SubsystemBase {
     transitionGraph.removeEdge(start, end);
   }
 
+  protected final void removeAllTransitionsFromState(E start) {
+    for(E s : enumType.getEnumConstants()) {
+      transitionGraph.removeEdge(start, s);
+    }
+  }
+
   /**
    * Adds a transition from every state to the given state
    *
