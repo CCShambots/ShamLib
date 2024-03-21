@@ -8,6 +8,8 @@ public class PVApriltagIOReal implements PVApriltagIO {
 
   public PVApriltagIOReal(String camName) {
     camera = new PhotonCamera(camName);
+
+    camera.setDriverMode(false);
   }
 
   @Override
