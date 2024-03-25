@@ -79,6 +79,8 @@ public class SwerveDrive {
   private final PIDGains autoThetaGains;
   private final Subsystem subsystem;
 
+  protected OdometryBoundingBox odometryBoundingBox;
+
   /**
    * Constructor for your typical swerve drive with odometry compatible with vision pose estimation
    *
@@ -373,6 +375,18 @@ public class SwerveDrive {
         odometry.updatePose(getCurrentAngle(), getModulePositions());
         break;
     }
+
+    if (odometryBoundingBox != null) {
+      Pose2d corrected = odometryBoundingBox.correctPose(getPose());
+
+      if (!corrected.equals(getPose())) {
+        odometry.resetPose(corrected, getModulePositions());
+      }
+    }
+  }
+
+  public void setOdometryBoundingBox(OdometryBoundingBox odometryBoundingBox) {
+    this.odometryBoundingBox = odometryBoundingBox;
   }
 
   public double[] getModuleAngles() {
