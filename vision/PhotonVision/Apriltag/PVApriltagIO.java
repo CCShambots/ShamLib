@@ -6,6 +6,7 @@ import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N5;
+import edu.wpi.first.wpilibj.Timer;
 import java.util.Optional;
 import org.littletonrobotics.junction.LogTable;
 import org.littletonrobotics.junction.inputs.LoggableInputs;
@@ -34,6 +35,9 @@ public interface PVApriltagIO {
     public void fromLog(LogTable table) {
       Packet packet = new Packet(table.get("rawPipelineResult", new byte[0]));
       frame = PhotonPipelineResult.serde.unpack(packet);
+
+      frame.setTimestampSeconds(Timer.getFPGATimestamp());
+
       isConnected = table.get("isConnected", false);
 
       double[] cameraMatrix = table.get("cameraMatrix", new double[0]);
