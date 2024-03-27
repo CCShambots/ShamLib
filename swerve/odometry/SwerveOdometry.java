@@ -13,7 +13,8 @@ public interface SwerveOdometry {
   public static record TimestampedVisionUpdate(
       double timestamp, Pose2d pose, Matrix<N3, N1> stdDevs) {}
 
-  public void resetPose(Pose2d newPose, SwerveModulePosition[] modulePositions);
+  public void resetPose(
+      Rotation2d gyroAngle, Pose2d newPose, SwerveModulePosition[] modulePositions);
 
   public Pose2d getPose();
 

@@ -380,7 +380,7 @@ public class SwerveDrive {
       Pose2d corrected = odometryBoundingBox.correctPose(getPose());
 
       if (!corrected.equals(getPose())) {
-        odometry.resetPose(corrected, getModulePositions());
+        resetOdometryPose(corrected);
       }
     }
   }
@@ -578,8 +578,7 @@ public class SwerveDrive {
   }
 
   public void resetOdometryPose(Pose2d newPose) {
-    resetGyro(newPose.getRotation());
-    odometry.resetPose(newPose, getModulePositions());
+    odometry.resetPose(getCurrentAngle(), newPose, getModulePositions());
   }
 
   public void resetOdometryPose() {

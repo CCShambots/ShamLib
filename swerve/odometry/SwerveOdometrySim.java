@@ -1,6 +1,7 @@
 package frc.robot.ShamLib.swerve.odometry;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import frc.robot.ShamLib.swerve.module.SwerveModule;
@@ -22,7 +23,8 @@ public class SwerveOdometrySim implements SwerveOdometry {
   }
 
   @Override
-  public void resetPose(Pose2d newPose, SwerveModulePosition[] modulePositions) {
+  public void resetPose(
+      Rotation2d gyroAngle, Pose2d newPose, SwerveModulePosition[] modulePositions) {
     pose = newPose;
   }
 

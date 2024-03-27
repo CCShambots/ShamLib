@@ -25,7 +25,8 @@ public class SwerveTimestampedOdometrySim implements SwerveOdometry {
   }
 
   @Override
-  public void resetPose(Pose2d newPose, SwerveModulePosition[] modulePositions) {
+  public void resetPose(
+      Rotation2d gyroAngle, Pose2d newPose, SwerveModulePosition[] modulePositions) {
     estimator.resetPose(newPose);
   }
 

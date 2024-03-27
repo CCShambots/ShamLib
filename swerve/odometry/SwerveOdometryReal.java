@@ -36,8 +36,9 @@ public class SwerveOdometryReal implements SwerveOdometry {
   }
 
   @Override
-  public void resetPose(Pose2d newPose, SwerveModulePosition[] modulePositions) {
-    odometry.resetPosition(newPose.getRotation(), modulePositions, newPose);
+  public void resetPose(
+      Rotation2d gyroAngle, Pose2d newPose, SwerveModulePosition[] modulePositions) {
+    odometry.resetPosition(gyroAngle, modulePositions, newPose);
   }
 
   @Override
